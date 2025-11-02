@@ -7,7 +7,7 @@ namespace TheProject;
 
 public class Transaction : IDisposable
 {
-    public static DatabaseConfiguration CreateConfiguration = new DatabaseConfiguration
+    public static DatabaseConfiguration CreateConfiguration = new()
     {
         Flags = DatabaseOpenFlags.Create
     };
@@ -26,6 +26,34 @@ public class Transaction : IDisposable
         LightningTransaction.Commit();
     }
 
+    public void DebugPrintAllValues()
+    {
+        Console.WriteLine("DB Content:");
+
+        using var cursor = LightningTransaction.CreateCursor(Database);
+        var result = cursor.SetRange([0]);
+        if (result == MDBResultCode.Success)
+        {
+            do
+            {
+                var current = cursor.GetCurrent();
+                var currentKey = current.key.AsSpan();
+                var currentValue = current.value.AsSpan();
+
+                for (int i = 0; i < currentKey.Length / 16; i++)
+                {
+                    Console.Write(MemoryMarshal.Read<Guid>(currentKey.Slice(i * 16, 16)) + ", ");
+                }
+
+                Console.Write(":");
+
+                Console.WriteLine((ValueTyp)currentValue[0]);
+            }
+            // Move to the next duplicate value
+            while (cursor.Next().resultCode == MDBResultCode.Success);
+        }
+    }
+
     public void DeleteObj(Guid id)
     {
         var prefix = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref id, 1));
@@ -37,11 +65,13 @@ public class Transaction : IDisposable
         //delete everything that starts with the ObjId
         if (cursor.SetRange(prefix) == MDBResultCode.Success)
         {
-            while (true)
+            do
             {
-                cursor.Delete();
-
                 var (_, k, v) = cursor.GetCurrent();
+
+                if(!k.AsSpan().Slice(0, 16).SequenceEqual(prefix))
+                    break;
+
                 if (v.AsSpan()[0] == (byte)ValueTyp.Aso)
                 {
                     //flip to get other assoc
@@ -50,9 +80,8 @@ public class Transaction : IDisposable
                     LightningTransaction.Delete(Database, tempBuf);
                 }
 
-                if(cursor.Next().resultCode != MDBResultCode.Success)
-                    break;
-            }
+                cursor.Delete();
+            } while (cursor.Next().resultCode == MDBResultCode.Success);
         }
     }
 
@@ -79,10 +108,10 @@ public class Transaction : IDisposable
         LightningTransaction.Put(Database, keyBuf, [(byte)ValueTyp.Aso]);
 
         Span<byte> otherKeyBuf = stackalloc byte[4 * 16];
-        Write(objIdB, otherKeyBuf.Slice(2*16, 16));
-        Write(fldIdB, otherKeyBuf.Slice(3*16, 16));
-        Write(objIdA, otherKeyBuf.Slice(0*16, 16));
-        Write(fldIdA, otherKeyBuf.Slice(1*16, 16));
+        Write(objIdB, otherKeyBuf.Slice(0*16, 16));
+        Write(fldIdB, otherKeyBuf.Slice(1*16, 16));
+        Write(objIdA, otherKeyBuf.Slice(2*16, 16));
+        Write(fldIdA, otherKeyBuf.Slice(3*16, 16));
         LightningTransaction.Put(Database, otherKeyBuf, [(byte)ValueTyp.Aso]);
     }
 
@@ -96,10 +125,10 @@ public class Transaction : IDisposable
         LightningTransaction.Delete(Database, keyBuf);
 
         Span<byte> otherKeyBuf = stackalloc byte[4 * 16];
-        Write(objIdB, otherKeyBuf.Slice(2*16, 16));
-        Write(fldIdB, otherKeyBuf.Slice(3*16, 16));
-        Write(objIdA, otherKeyBuf.Slice(0*16, 16));
-        Write(fldIdA, otherKeyBuf.Slice(1*16, 16));
+        Write(objIdB, otherKeyBuf.Slice(0*16, 16));
+        Write(fldIdB, otherKeyBuf.Slice(1*16, 16));
+        Write(objIdA, otherKeyBuf.Slice(2*16, 16));
+        Write(fldIdA, otherKeyBuf.Slice(3*16, 16));
         LightningTransaction.Delete(Database, otherKeyBuf);
     }
 
@@ -137,11 +166,11 @@ public class Transaction : IDisposable
         return MemoryMarshal.Read<FldValue>(v.AsSpan().Slice(1, 16));
     }
 
-    public AsoFldEnumerator EnumerateAso(Guid objId, Guid fldId)
+    public AsoFldEnumerable EnumerateAso(Guid objId, Guid fldId)
     {
         var cursor = LightningTransaction.CreateCursor(Database);
 
-        return new AsoFldEnumerator(cursor, objId, fldId);
+        return new AsoFldEnumerable(cursor, objId, fldId);
     }
 
     public static void Write<T>(T data, Span<byte> targetBuf) where T : unmanaged
@@ -160,6 +189,35 @@ public struct AsoEnumeratorObj
 {
     public Guid ObjId;
     public Guid FldId;
+}
+
+public struct AsoFldEnumerable : IEnumerable<AsoEnumeratorObj>
+{
+    private readonly LightningCursor _cursor;
+    private readonly Guid _objId;
+    private readonly Guid _fldId;
+
+    public AsoFldEnumerable(LightningCursor cursor, Guid objId, Guid fldId)
+    {
+        _cursor = cursor;
+        _objId = objId;
+        _fldId = fldId;
+    }
+
+    public AsoFldEnumerator GetEnumerator()
+    {
+        return new AsoFldEnumerator(_cursor, _objId, _fldId);
+    }
+
+    IEnumerator<AsoEnumeratorObj> IEnumerable<AsoEnumeratorObj>.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 }
 
 public struct AsoFldEnumerator : IEnumerator<AsoEnumeratorObj>
@@ -188,24 +246,28 @@ public struct AsoFldEnumerator : IEnumerator<AsoEnumeratorObj>
         MDBResultCode code;
         MDBValue key;
 
+        Span<byte> prefixKeyBuf = stackalloc byte[2 * 16];
+        Transaction.Write(objId, prefixKeyBuf.Slice(0*16, 16));
+        Transaction.Write(fldId, prefixKeyBuf.Slice(1*16, 16));
+
         if (isFirst)
         {
-            Span<byte> prefixKeyBuf = stackalloc byte[2 * 16];
-            Transaction.Write(objId, prefixKeyBuf.Slice(0*16, 16));
-            Transaction.Write(fldId, prefixKeyBuf.Slice(1*16, 16));
             code = cursor.SetRange(prefixKeyBuf);
             if (code != MDBResultCode.Success)
                 return false;
 
-            (code, key, _) = cursor.GetCurrent();
+            (_, key, _) = cursor.GetCurrent();
+            isFirst = false;
         }
         else
         {
             (code, key, _) = cursor.Next();
         }
 
-
         if (code != MDBResultCode.Success)
+            return false;
+
+        if (!key.AsSpan().Slice(0, 2 * 16).SequenceEqual(prefixKeyBuf))
             return false;
 
         _current1.ObjId = MemoryMarshal.Read<Guid>(key.AsSpan().Slice(2 * 16, 16));
@@ -218,6 +280,8 @@ public struct AsoFldEnumerator : IEnumerator<AsoEnumeratorObj>
     {
         throw new NotImplementedException();
     }
+
+    public AsoEnumeratorObj Current => _current1;
 
     AsoEnumeratorObj IEnumerator<AsoEnumeratorObj>.Current => _current1;
 
