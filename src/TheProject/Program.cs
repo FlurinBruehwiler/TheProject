@@ -1,21 +1,18 @@
 ﻿using LightningDB;
+using TheProject;
 
+var env = new LightningEnvironment("path.db");
+env.Open();
 
+using var transaction = new Transaction(env);
 
-using (var tx = env.BeginTransaction())
-{
-    using (var db = tx.OpenDatabase(configuration: new DatabaseConfiguration
-           {
-               Flags = DatabaseOpenFlags.Create
-           }))
-    {
-        ReadOnlySpan<byte> key = [123];
-        ReadOnlySpan<byte> value = [21];
-        tx.Put(db, key, value);
-        tx.Commit();
-    }
-}
+var folderTypeId = Guid.NewGuid();
+var folderNameFieldId = Guid.NewGuid();
 
-Console.WriteLine("Hello, World!");
+var folder1 = transaction.CreateObj(folderTypeId);
+transaction.SetFldValue(folder1, folderNameFieldId, FldValue.FromInt32(420));
+
+var folderNameValue = transaction.GetFldValue(folder1, folderNameFieldId).ToInt32();
+Console.WriteLine(folderNameValue);
 
 

@@ -1,146 +1,278 @@
-﻿using System.Buffers.Binary;
+﻿using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using LightningDB;
 
 namespace TheProject;
 
-public class Database
+public class Transaction : IDisposable
 {
-    public LightningEnvironment Environment;
-    public DatabaseConfiguration Configuration;
-
-    public static Database Create(string path)
+    public static DatabaseConfiguration CreateConfiguration = new DatabaseConfiguration
     {
-        var db = new Database();
-        db.Environment = new LightningEnvironment("mydb.db");
-        db.Environment.Open();
+        Flags = DatabaseOpenFlags.Create
+    };
 
-        db.Configuration = new DatabaseConfiguration
-        {
-            Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesSort
-        };
+    public LightningTransaction LightningTransaction;
+    public LightningDatabase Database;
 
-        return db;
+    public Transaction(LightningEnvironment env)
+    {
+        LightningTransaction = env.BeginTransaction();
+        Database = LightningTransaction.OpenDatabase(configuration: CreateConfiguration);
     }
 
-    public void ApplyChanges(Dataset dataset)
+    public void Commit()
     {
-        using (var tx = Environment.BeginTransaction())
-        {
-            using (var db = tx.OpenDatabase(configuration: Configuration))
-            {
-                ApplyObjChange(dataset, tx, db);
-                ApplyAsoChange(dataset, tx, db);
-                ApplyFldChange(dataset);
+        LightningTransaction.Commit();
+    }
 
-                tx.Commit();
+    public void DeleteObj(Guid id)
+    {
+        var prefix = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref id, 1));
+
+        using var cursor = LightningTransaction.CreateCursor(Database);
+
+        Span<byte> tempBuf = stackalloc byte[4 * 16];
+
+        //delete everything that starts with the ObjId
+        if (cursor.SetRange(prefix) == MDBResultCode.Success)
+        {
+            while (true)
+            {
+                cursor.Delete();
+
+                var (_, k, v) = cursor.GetCurrent();
+                if (v.AsSpan()[0] == (byte)ValueTyp.Aso)
+                {
+                    //flip to get other assoc
+                    k.AsSpan().Slice(0, 2 * 16).CopyTo(tempBuf.Slice(2 * 16, 2 * 16));
+                    k.AsSpan().Slice(16 * 2, 2 * 16).CopyTo(tempBuf.Slice(0, 2 * 16));
+                    LightningTransaction.Delete(Database, tempBuf);
+                }
+
+                if(cursor.Next().resultCode != MDBResultCode.Success)
+                    break;
             }
         }
     }
 
-    private void ApplyObjChange(Dataset dataset, LightningTransaction tx, LightningDatabase db)
+    public Guid CreateObj(Guid typId)
     {
-        foreach (var obj in dataset.Obj)
+        var id = Guid.NewGuid();
+
+        Span<byte> keyBuf = stackalloc byte[2 * 16];
+        Write(id, keyBuf.Slice(0, 16));
+        Write(typId, keyBuf.Slice(16, 16));
+
+        LightningTransaction.Put(Database, keyBuf, [(byte)ValueTyp.Obj]);
+
+        return id;
+    }
+
+    public void CreateAso(Guid objIdA, Guid fldIdA, Guid objIdB, Guid fldIdB)
+    {
+        Span<byte> keyBuf = stackalloc byte[4 * 16];
+        Write(objIdA, keyBuf.Slice(0*16, 16));
+        Write(fldIdA, keyBuf.Slice(1*16, 16));
+        Write(objIdB, keyBuf.Slice(2*16, 16));
+        Write(fldIdB, keyBuf.Slice(3*16, 16));
+        LightningTransaction.Put(Database, keyBuf, [(byte)ValueTyp.Aso]);
+
+        Span<byte> otherKeyBuf = stackalloc byte[4 * 16];
+        Write(objIdB, otherKeyBuf.Slice(2*16, 16));
+        Write(fldIdB, otherKeyBuf.Slice(3*16, 16));
+        Write(objIdA, otherKeyBuf.Slice(0*16, 16));
+        Write(fldIdA, otherKeyBuf.Slice(1*16, 16));
+        LightningTransaction.Put(Database, otherKeyBuf, [(byte)ValueTyp.Aso]);
+    }
+
+    public void RemoveAso(Guid objIdA, Guid fldIdA, Guid objIdB, Guid fldIdB)
+    {
+        Span<byte> keyBuf = stackalloc byte[4 * 16];
+        Write(objIdA, keyBuf.Slice(0*16, 16));
+        Write(fldIdA, keyBuf.Slice(1*16, 16));
+        Write(objIdB, keyBuf.Slice(2*16, 16));
+        Write(fldIdB, keyBuf.Slice(3*16, 16));
+        LightningTransaction.Delete(Database, keyBuf);
+
+        Span<byte> otherKeyBuf = stackalloc byte[4 * 16];
+        Write(objIdB, otherKeyBuf.Slice(2*16, 16));
+        Write(fldIdB, otherKeyBuf.Slice(3*16, 16));
+        Write(objIdA, otherKeyBuf.Slice(0*16, 16));
+        Write(fldIdA, otherKeyBuf.Slice(1*16, 16));
+        LightningTransaction.Delete(Database, otherKeyBuf);
+    }
+
+    public void SetFldValue(Guid objId, Guid fldId, FldValue fldValue)
+    {
+        Span<byte> keyBuf = stackalloc byte[2 * 16];
+        Write(objId, keyBuf.Slice(0*16, 16));
+        Write(fldId, keyBuf.Slice(1*16, 16));
+
+        if (Helper.MemoryEquals(fldValue, default))
         {
-            if (obj.State == State.Deleted)
-            {
-                Obj o = obj;
-                var key = Obj.GetKey(ref o);
+            LightningTransaction.Delete(Database, keyBuf);
+        }
+        else
+        {
+            Span<byte> valueBuf = stackalloc byte[1 + 16];
+            valueBuf[0] = (byte)ValueTyp.Val;
+            Write(fldValue, valueBuf.Slice(1, 16));
 
-                tx.Delete(db, key);
-            }
-            else if (obj.State == State.Added)
-            {
-                Obj o = obj;
-                var key = Obj.GetKey(ref o);
-
-                tx.Put(db, key, ReadOnlySpan<byte>.Empty);
-            }
+            LightningTransaction.Put(Database, keyBuf, valueBuf);
         }
     }
 
-    private const int SizeOfGuid = 16;
-
-    private void ApplyAsoChange(Dataset dataset, LightningTransaction tx, LightningDatabase db)
+    public FldValue GetFldValue(Guid objId, Guid fldId)
     {
-        Span<byte> keyBuffer = stackalloc byte[SizeOfGuid + SizeOfGuid];
-        Span<byte> valueBuffer = stackalloc byte[SizeOfGuid + SizeOfGuid];
+        Span<byte> keyBuf = stackalloc byte[2 * 16];
+        Write(objId, keyBuf.Slice(0*16, 16));
+        Write(fldId, keyBuf.Slice(1*16, 16));
 
-        foreach (var aso in dataset.Aso)
-        {
-            if (aso.State == State.Added)
-            {
-                var a = aso;
-                //key = ObjIdA + FldIdA
-                MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref a.ObjIdA, 1)).CopyTo(keyBuffer);
-                MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref a.FldIdA, 1)).CopyTo(keyBuffer.Slice(SizeOfGuid));
+        var (s, k, v) = LightningTransaction.Get(Database, keyBuf);
 
-                //value = ObjIdB + FldIdB
-                MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref a.ObjIdB, 1)).CopyTo(valueBuffer);
-                MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref a.FldIdB, 1)).CopyTo(valueBuffer.Slice(SizeOfGuid));
+        if (s != MDBResultCode.Success) //todo logging
+            return default;
 
-                tx.Put(db, keyBuffer, valueBuffer);
-            }
-            else if (aso.State == State.Deleted)
-            {
-
-            }
-        }
+        return MemoryMarshal.Read<FldValue>(v.AsSpan().Slice(1, 16));
     }
 
-    private void ApplyFldChange(Dataset dataset)
+    public AsoFldEnumerator EnumerateAso(Guid objId, Guid fldId)
     {
+        var cursor = LightningTransaction.CreateCursor(Database);
 
+        return new AsoFldEnumerator(cursor, objId, fldId);
+    }
+
+    public static void Write<T>(T data, Span<byte> targetBuf) where T : unmanaged
+    {
+        MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref data, 1)).CopyTo(targetBuf);
+    }
+
+    public void Dispose()
+    {
+        LightningTransaction.Dispose();
+        Database.Dispose();
     }
 }
 
-public class Dataset
+public struct AsoEnumeratorObj
 {
-    public List<Obj> Obj;
-    public List<Aso> Aso;
-    public List<Fld> Fld;
-}
-
-public struct Obj
-{
-    public State State;
-
-    public Guid Id;
-    public Guid TypId;
-
-    public static ReadOnlySpan<byte> GetKey(ref Obj obj)
-    {
-        return MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref obj.Id, 1));
-    }
-}
-
-public struct Aso
-{
-    public State State;
-
-    public Guid FldIdA;
-    public Guid FldIdB;
-    public Guid ObjIdA;
-    public Guid ObjIdB;
-
-}
-
-public struct Fld
-{
-    public State State;
+    public Guid ObjId;
     public Guid FldId;
-    public FldData Data;
 }
+
+public struct AsoFldEnumerator : IEnumerator<AsoEnumeratorObj>
+{
+    private AsoEnumeratorObj _current1;
+    private LightningCursor cursor;
+    private bool isFirst;
+    private Guid objId;
+    private Guid fldId;
+
+    public AsoFldEnumerator(LightningCursor cursor, Guid objId, Guid fldId)
+    {
+        isFirst = true;
+        this.cursor = cursor;
+        this.objId = objId;
+        this.fldId = fldId;
+    }
+
+    public void Dispose()
+    {
+        cursor.Dispose();
+    }
+
+    public bool MoveNext()
+    {
+        MDBResultCode code;
+        MDBValue key;
+
+        if (isFirst)
+        {
+            Span<byte> prefixKeyBuf = stackalloc byte[2 * 16];
+            Transaction.Write(objId, prefixKeyBuf.Slice(0*16, 16));
+            Transaction.Write(fldId, prefixKeyBuf.Slice(1*16, 16));
+            code = cursor.SetRange(prefixKeyBuf);
+            if (code != MDBResultCode.Success)
+                return false;
+
+            (code, key, _) = cursor.GetCurrent();
+        }
+        else
+        {
+            (code, key, _) = cursor.Next();
+        }
+
+
+        if (code != MDBResultCode.Success)
+            return false;
+
+        _current1.ObjId = MemoryMarshal.Read<Guid>(key.AsSpan().Slice(2 * 16, 16));
+        _current1.FldId = MemoryMarshal.Read<Guid>(key.AsSpan().Slice(3 * 16, 16));
+
+        return true;
+    }
+
+    public void Reset()
+    {
+        throw new NotImplementedException();
+    }
+
+    AsoEnumeratorObj IEnumerator<AsoEnumeratorObj>.Current => _current1;
+
+    object IEnumerator.Current => throw new NotImplementedException();
+}
+
+public static class Helper
+{
+    public static bool MemoryEquals<T>(T val, T other) where T : unmanaged
+    {
+        ReadOnlySpan<byte> value = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref val, 1));
+
+        ReadOnlySpan<byte> otherValue = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref other, 1));
+
+        return value.SequenceEqual(otherValue);
+    }
+}
+
+//Keys:
+//OBJ: ObjId, TypId
+//ASO: ObjIdA, FldIdA, ObjIdB, FldIdB
+//ASO: ObjIdB, FldIdB, ObjIdA, FldIdA
+//VAL: ObjId, FldId
 
 [InlineArray(16)]
-public struct FldData
+public struct FldValue
 {
     public byte Data;
+
+    public static FldValue FromInt32(int intValue)
+    {
+        ReadOnlySpan<byte> intAsBytes = MemoryMarshal.AsBytes(
+            MemoryMarshal.CreateReadOnlySpan(ref intValue, 1)
+        );
+
+        FldValue fldValue = default;
+        Span<byte> fldValueAsBytes = MemoryMarshal.AsBytes(
+            MemoryMarshal.CreateSpan(ref fldValue, 1)
+        );
+
+        intAsBytes.CopyTo(fldValueAsBytes);
+
+        return fldValue;
+    }
+
+    public unsafe int ToInt32()
+    {
+        var c = this;
+        return *(int*)&c;
+    }
 }
 
-public enum State
+public enum ValueTyp : byte
 {
-    Added,
-    Deleted
+    Obj = 0,
+    Aso = 1,
+    Val = 2,
 }
