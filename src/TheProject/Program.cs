@@ -1,6 +1,8 @@
 ﻿using LightningDB;
 using TheProject;
 
+var model = ProjectModel.CreateFromDirectory("Model");
+
 var env = new LightningEnvironment("path.db");
 env.Open();
 
@@ -29,7 +31,6 @@ foreach (var aso in transaction.EnumerateAso(folder2, subFolderFieldId))
 transaction.DeleteObj(folder2);
 
 transaction.DebugPrintAllValues();
-
 
 // var folderNameValue = transaction.GetFldValue(folder1, folderNameFieldId).ToInt32();
 // Console.WriteLine(folderNameValue);

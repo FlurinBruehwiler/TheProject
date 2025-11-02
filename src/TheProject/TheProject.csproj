@@ -12,4 +12,14 @@
     <PackageReference Include="LightningDB" Version="0.19.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Model\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SourceGen\SourceGen.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -90,8 +90,8 @@ public class Transaction : IDisposable
         var id = Guid.NewGuid();
 
         Span<byte> keyBuf = stackalloc byte[2 * 16];
-        Write(id, keyBuf.Slice(0, 16));
-        Write(typId, keyBuf.Slice(16, 16));
+        MemoryMarshal.Write(keyBuf.Slice(0, 16), id);
+        MemoryMarshal.Write(keyBuf.Slice(16, 16), typId);
 
         LightningTransaction.Put(Database, keyBuf, [(byte)ValueTyp.Obj]);
 
@@ -101,42 +101,42 @@ public class Transaction : IDisposable
     public void CreateAso(Guid objIdA, Guid fldIdA, Guid objIdB, Guid fldIdB)
     {
         Span<byte> keyBuf = stackalloc byte[4 * 16];
-        Write(objIdA, keyBuf.Slice(0*16, 16));
-        Write(fldIdA, keyBuf.Slice(1*16, 16));
-        Write(objIdB, keyBuf.Slice(2*16, 16));
-        Write(fldIdB, keyBuf.Slice(3*16, 16));
+        MemoryMarshal.Write(keyBuf.Slice(0*16, 16), objIdA);
+        MemoryMarshal.Write(keyBuf.Slice(1*16, 16), fldIdA);
+        MemoryMarshal.Write(keyBuf.Slice(2*16, 16), objIdB);
+        MemoryMarshal.Write(keyBuf.Slice(3*16, 16), fldIdB);
         LightningTransaction.Put(Database, keyBuf, [(byte)ValueTyp.Aso]);
 
         Span<byte> otherKeyBuf = stackalloc byte[4 * 16];
-        Write(objIdB, otherKeyBuf.Slice(0*16, 16));
-        Write(fldIdB, otherKeyBuf.Slice(1*16, 16));
-        Write(objIdA, otherKeyBuf.Slice(2*16, 16));
-        Write(fldIdA, otherKeyBuf.Slice(3*16, 16));
+        MemoryMarshal.Write(otherKeyBuf.Slice(0*16, 16), objIdB);
+        MemoryMarshal.Write(otherKeyBuf.Slice(1*16, 16), fldIdB);
+        MemoryMarshal.Write(otherKeyBuf.Slice(2*16, 16), objIdA);
+        MemoryMarshal.Write(otherKeyBuf.Slice(3*16, 16), fldIdA);
         LightningTransaction.Put(Database, otherKeyBuf, [(byte)ValueTyp.Aso]);
     }
 
     public void RemoveAso(Guid objIdA, Guid fldIdA, Guid objIdB, Guid fldIdB)
     {
         Span<byte> keyBuf = stackalloc byte[4 * 16];
-        Write(objIdA, keyBuf.Slice(0*16, 16));
-        Write(fldIdA, keyBuf.Slice(1*16, 16));
-        Write(objIdB, keyBuf.Slice(2*16, 16));
-        Write(fldIdB, keyBuf.Slice(3*16, 16));
+        MemoryMarshal.Write(keyBuf.Slice(0*16, 16), objIdA);
+        MemoryMarshal.Write(keyBuf.Slice(1*16, 16), fldIdA);
+        MemoryMarshal.Write(keyBuf.Slice(2*16, 16), objIdB);
+        MemoryMarshal.Write(keyBuf.Slice(3*16, 16), fldIdB);
         LightningTransaction.Delete(Database, keyBuf);
 
         Span<byte> otherKeyBuf = stackalloc byte[4 * 16];
-        Write(objIdB, otherKeyBuf.Slice(0*16, 16));
-        Write(fldIdB, otherKeyBuf.Slice(1*16, 16));
-        Write(objIdA, otherKeyBuf.Slice(2*16, 16));
-        Write(fldIdA, otherKeyBuf.Slice(3*16, 16));
+        MemoryMarshal.Write(otherKeyBuf.Slice(0*16, 16), objIdB);
+        MemoryMarshal.Write(otherKeyBuf.Slice(1*16, 16), fldIdB);
+        MemoryMarshal.Write(otherKeyBuf.Slice(2*16, 16), objIdA);
+        MemoryMarshal.Write(otherKeyBuf.Slice(3*16, 16), fldIdA);
         LightningTransaction.Delete(Database, otherKeyBuf);
     }
 
     public void SetFldValue(Guid objId, Guid fldId, FldValue fldValue)
     {
         Span<byte> keyBuf = stackalloc byte[2 * 16];
-        Write(objId, keyBuf.Slice(0*16, 16));
-        Write(fldId, keyBuf.Slice(1*16, 16));
+        MemoryMarshal.Write(keyBuf.Slice(0*16, 16), objId);
+        MemoryMarshal.Write(keyBuf.Slice(1*16, 16), fldId);
 
         if (Helper.MemoryEquals(fldValue, default))
         {
@@ -146,7 +146,7 @@ public class Transaction : IDisposable
         {
             Span<byte> valueBuf = stackalloc byte[1 + 16];
             valueBuf[0] = (byte)ValueTyp.Val;
-            Write(fldValue, valueBuf.Slice(1, 16));
+            MemoryMarshal.Write(valueBuf.Slice(1, 16), fldValue);
 
             LightningTransaction.Put(Database, keyBuf, valueBuf);
         }
@@ -155,8 +155,8 @@ public class Transaction : IDisposable
     public FldValue GetFldValue(Guid objId, Guid fldId)
     {
         Span<byte> keyBuf = stackalloc byte[2 * 16];
-        Write(objId, keyBuf.Slice(0*16, 16));
-        Write(fldId, keyBuf.Slice(1*16, 16));
+        MemoryMarshal.Write(keyBuf.Slice(0*16, 16), objId);
+        MemoryMarshal.Write(keyBuf.Slice(1*16, 16), fldId);
 
         var (s, k, v) = LightningTransaction.Get(Database, keyBuf);
 
@@ -166,16 +166,22 @@ public class Transaction : IDisposable
         return MemoryMarshal.Read<FldValue>(v.AsSpan().Slice(1, 16));
     }
 
+    public Guid? GetSingleAsoValue(Guid objId, Guid fldId)
+    {
+        using var enumerator = EnumerateAso(objId, fldId).GetEnumerator();
+
+        var hasValue = enumerator.MoveNext();
+        if (!hasValue)
+            return null;
+
+        return enumerator.Current.ObjId;
+    }
+
     public AsoFldEnumerable EnumerateAso(Guid objId, Guid fldId)
     {
         var cursor = LightningTransaction.CreateCursor(Database);
 
         return new AsoFldEnumerable(cursor, objId, fldId);
-    }
-
-    public static void Write<T>(T data, Span<byte> targetBuf) where T : unmanaged
-    {
-        MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref data, 1)).CopyTo(targetBuf);
     }
 
     public void Dispose()
@@ -247,8 +253,8 @@ public struct AsoFldEnumerator : IEnumerator<AsoEnumeratorObj>
         MDBValue key;
 
         Span<byte> prefixKeyBuf = stackalloc byte[2 * 16];
-        Transaction.Write(objId, prefixKeyBuf.Slice(0*16, 16));
-        Transaction.Write(fldId, prefixKeyBuf.Slice(1*16, 16));
+        MemoryMarshal.Write(prefixKeyBuf.Slice(0*16, 16), objId);
+        MemoryMarshal.Write(prefixKeyBuf.Slice(1*16, 16), fldId);
 
         if (isFirst)
         {
