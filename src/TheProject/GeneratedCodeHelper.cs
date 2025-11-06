@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Reflection.PortableExecutable;
 
 namespace TheProject;
 
@@ -27,9 +28,64 @@ public static class GeneratedCodeHelper
 
         return new T { _transaction = transaction, _objId = asoValue.Value };
     }
+
+    public static void SetAssoc(Transaction transaction, Guid objIdA, Guid fldIdA, Guid objIdB, Guid fldIdB)
+    {
+        if (objIdB == Guid.Empty)
+        {
+            transaction.RemoveAllAso(objIdA, fldIdA);
+        }
+        else
+        {
+            transaction.CreateAso(objIdA, fldIdA, objIdB, fldIdB);
+        }
+    }
 }
 
-public struct AssocCollection<T> : ICollection<T> where T : ITransactionObject
+public struct AssoCollectionEnumerator<T> : IEnumerator<T> where T : struct, ITransactionObject
+{
+    private readonly Transaction _transaction;
+    private AsoFldEnumerator _asoFldEnumerator;
+    private T _current;
+
+    public AssoCollectionEnumerator(Transaction transaction, AsoFldEnumerator asoFldEnumerator)
+    {
+        _transaction = transaction;
+        _asoFldEnumerator = asoFldEnumerator;
+    }
+
+    public void Dispose()
+    {
+        _asoFldEnumerator.Dispose();
+    }
+
+    public bool MoveNext()
+    {
+        var result = _asoFldEnumerator.MoveNext();
+
+        if (result)
+        {
+            _current = default;
+            _current._transaction = _transaction;
+            _current._objId = _asoFldEnumerator.Current.ObjId;
+        }
+
+        return result;
+    }
+
+    public void Reset()
+    {
+        throw new NotImplementedException();
+    }
+
+    public T Current => _current;
+
+    T IEnumerator<T>.Current => _current;
+
+    object IEnumerator.Current => throw new NotImplementedException();
+}
+
+public struct AssocCollection<T> : ICollection<T> where T : struct, ITransactionObject
 {
     public Guid _objId;
     public Guid _fldId;
@@ -42,9 +98,14 @@ public struct AssocCollection<T> : ICollection<T> where T : ITransactionObject
         _fldId = fldId;
     }
 
-    public IEnumerator<T> GetEnumerator()
+    public AssoCollectionEnumerator<T> GetEnumerator()
     {
-        throw new NotImplementedException();
+        return new AssoCollectionEnumerator<T>(_transaction, _transaction.EnumerateAso(_objId, _fldId).GetEnumerator());
+    }
+
+    IEnumerator<T> IEnumerable<T>.GetEnumerator()
+    {
+        return GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()

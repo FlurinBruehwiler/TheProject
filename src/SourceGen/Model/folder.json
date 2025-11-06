@@ -1,0 +1,37 @@
+﻿{
+  "id": "A3CCBD8B-2256-414B-A402-1A091CB407A5",
+  "key": "Folder",
+  "name": {
+    "en": "Folder"
+  },
+  "fields": [
+    {
+      "id": "18696C7B-0B5D-406A-9F4C-F2E830CC0F55",
+      "key": "Name",
+      "name": {
+        "en": "Name"
+      },
+      "datatype": "String"
+    }
+  ],
+  "referenceFields": [
+    {
+      "id": "B40BD476-D9A3-4554-A2F6-4F7760C0FFE4",
+      "key": "Subfolders",
+      "name": {
+        "en": "Subfolders"
+      },
+      "refType": "Multiple",
+      "otherReferenceFielGuid": "83A0ADA7-BA53-4877-8262-BD47520EEAC7"
+    },
+    {
+      "id": "83A0ADA7-BA53-4877-8262-BD47520EEAC7",
+      "key": "Parent",
+      "name": {
+        "en": "Parent"
+      },
+      "refType": "SingleOptional",
+      "otherReferenceFielGuid": "B40BD476-D9A3-4554-A2F6-4F7760C0FFE4"
+    }
+  ]
+}

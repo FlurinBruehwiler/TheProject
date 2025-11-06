@@ -1,9 +1,49 @@
 ﻿using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using LightningDB;
 
 namespace TheProject;
+
+public unsafe struct Slice<T> where T : unmanaged
+{
+    public Slice(ReadOnlySpan<T> span)
+    {
+        fixed (T* ptr = span)
+        {
+            Items = ptr;
+            Length = span.Length;
+        }
+    }
+
+    public Slice(T* items, int length)
+    {
+        Items = items;
+        Length = length;
+    }
+
+    public T* Items;
+    public int Length;
+
+    public Span<T> AsSpan()
+    {
+        return new Span<T>(Items, Length);
+    }
+
+    public Slice<byte> AsByteSlice()
+    {
+        return new Slice<byte>((byte*)Items, Length * sizeof(T));
+    }
+}
+
+public static class Extensions
+{
+    public static Slice<T> AsSlice<T>(this ReadOnlySpan<T> span) where T : unmanaged
+    {
+        return new Slice<T>(span);
+    }
+}
 
 public class Transaction : IDisposable
 {
@@ -14,11 +54,13 @@ public class Transaction : IDisposable
 
     public LightningTransaction LightningTransaction;
     public LightningDatabase Database;
+    public LightningCursor Cursor;
 
     public Transaction(LightningEnvironment env)
     {
         LightningTransaction = env.BeginTransaction();
         Database = LightningTransaction.OpenDatabase(configuration: CreateConfiguration);
+        Cursor = LightningTransaction.CreateCursor(Database);
     }
 
     public void Commit()
@@ -30,13 +72,12 @@ public class Transaction : IDisposable
     {
         Console.WriteLine("DB Content:");
 
-        using var cursor = LightningTransaction.CreateCursor(Database);
-        var result = cursor.SetRange([0]);
+        var result = Cursor.SetRange([0]);
         if (result == MDBResultCode.Success)
         {
             do
             {
-                var current = cursor.GetCurrent();
+                var current = Cursor.GetCurrent();
                 var currentKey = current.key.AsSpan();
                 var currentValue = current.value.AsSpan();
 
@@ -50,7 +91,7 @@ public class Transaction : IDisposable
                 Console.WriteLine((ValueTyp)currentValue[0]);
             }
             // Move to the next duplicate value
-            while (cursor.Next().resultCode == MDBResultCode.Success);
+            while (Cursor.Next().resultCode == MDBResultCode.Success);
         }
     }
 
@@ -58,16 +99,14 @@ public class Transaction : IDisposable
     {
         var prefix = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref id, 1));
 
-        using var cursor = LightningTransaction.CreateCursor(Database);
-
         Span<byte> tempBuf = stackalloc byte[4 * 16];
 
         //delete everything that starts with the ObjId
-        if (cursor.SetRange(prefix) == MDBResultCode.Success)
+        if (Cursor.SetRange(prefix) == MDBResultCode.Success)
         {
             do
             {
-                var (_, k, v) = cursor.GetCurrent();
+                var (_, k, v) = Cursor.GetCurrent();
 
                 if(!k.AsSpan().Slice(0, 16).SequenceEqual(prefix))
                     break;
@@ -80,8 +119,8 @@ public class Transaction : IDisposable
                     LightningTransaction.Delete(Database, tempBuf);
                 }
 
-                cursor.Delete();
-            } while (cursor.Next().resultCode == MDBResultCode.Success);
+                Cursor.Delete();
+            } while (Cursor.Next().resultCode == MDBResultCode.Success);
         }
     }
 
@@ -115,6 +154,38 @@ public class Transaction : IDisposable
         LightningTransaction.Put(Database, otherKeyBuf, [(byte)ValueTyp.Aso]);
     }
 
+    public void RemoveAllAso(Guid objId, Guid fldId)
+    {
+        Span<byte> prefix = stackalloc byte[2 * 16];
+        MemoryMarshal.Write(prefix.Slice(0*16, 16), objId);
+        MemoryMarshal.Write(prefix.Slice(1*16, 16), fldId);
+
+
+        Span<byte> tempBuf = stackalloc byte[4 * 16];
+
+        //delete everything that starts with the ObjId and Aso
+        if (Cursor.SetRange(prefix) == MDBResultCode.Success)
+        {
+            do
+            {
+                var (_, k, v) = Cursor.GetCurrent();
+
+                if(!k.AsSpan().Slice(0, 16).SequenceEqual(prefix))
+                    break;
+
+                if (v.AsSpan()[0] == (byte)ValueTyp.Aso)
+                {
+                    //flip to get other assoc
+                    k.AsSpan().Slice(0, 2 * 16).CopyTo(tempBuf.Slice(2 * 16, 2 * 16));
+                    k.AsSpan().Slice(16 * 2, 2 * 16).CopyTo(tempBuf.Slice(0, 2 * 16));
+                    LightningTransaction.Delete(Database, tempBuf);
+                }
+
+                Cursor.Delete();
+            } while (Cursor.Next().resultCode == MDBResultCode.Success);
+        }
+    }
+
     public void RemoveAso(Guid objIdA, Guid fldIdA, Guid objIdB, Guid fldIdB)
     {
         Span<byte> keyBuf = stackalloc byte[4 * 16];
@@ -132,27 +203,27 @@ public class Transaction : IDisposable
         LightningTransaction.Delete(Database, otherKeyBuf);
     }
 
-    public void SetFldValue(Guid objId, Guid fldId, FldValue fldValue)
+    public void SetFldValue(Guid objId, Guid fldId, Slice<byte> span)
     {
         Span<byte> keyBuf = stackalloc byte[2 * 16];
         MemoryMarshal.Write(keyBuf.Slice(0*16, 16), objId);
         MemoryMarshal.Write(keyBuf.Slice(1*16, 16), fldId);
 
-        if (Helper.MemoryEquals(fldValue, default))
+        if (span.Length == 0)
         {
             LightningTransaction.Delete(Database, keyBuf);
         }
         else
         {
-            Span<byte> valueBuf = stackalloc byte[1 + 16];
+            Span<byte> valueBuf = stackalloc byte[1 + span.Length]; //todo ensure span.length is not too large, should use arena here....
             valueBuf[0] = (byte)ValueTyp.Val;
-            MemoryMarshal.Write(valueBuf.Slice(1, 16), fldValue);
+            span.AsSpan().CopyTo(valueBuf.Slice(1));
 
             LightningTransaction.Put(Database, keyBuf, valueBuf);
         }
     }
 
-    public FldValue GetFldValue(Guid objId, Guid fldId)
+    public unsafe Slice<byte> GetFldValue(Guid objId, Guid fldId)
     {
         Span<byte> keyBuf = stackalloc byte[2 * 16];
         MemoryMarshal.Write(keyBuf.Slice(0*16, 16), objId);
@@ -163,7 +234,7 @@ public class Transaction : IDisposable
         if (s != MDBResultCode.Success) //todo logging
             return default;
 
-        return MemoryMarshal.Read<FldValue>(v.AsSpan().Slice(1, 16));
+        return new Slice<byte>(v.AsSpan().Slice(1));
     }
 
     public Guid? GetSingleAsoValue(Guid objId, Guid fldId)
@@ -179,6 +250,10 @@ public class Transaction : IDisposable
 
     public AsoFldEnumerable EnumerateAso(Guid objId, Guid fldId)
     {
+        //todo we can reuse the cursor, the problem is once the user starts to enumerate multiple asos at the same time,
+        //so we would need to detect that and at that point create a new cursor, or even better we have a cursor pool,
+        //where for each enumeration we look if if have a non used cursor, once the enumeration finishes,
+        //the cursor gets returned to the pool
         var cursor = LightningTransaction.CreateCursor(Database);
 
         return new AsoFldEnumerable(cursor, objId, fldId);
@@ -186,6 +261,7 @@ public class Transaction : IDisposable
 
     public void Dispose()
     {
+        Cursor.Dispose();
         LightningTransaction.Dispose();
         Database.Dispose();
     }
@@ -306,38 +382,41 @@ public static class Helper
     }
 }
 
+/*
+ * 50
+ * 50 10
+ * 60
+ * 61
+ *
+ *
+ */
+
 //Keys:
 //OBJ: ObjId, TypId
 //ASO: ObjIdA, FldIdA, ObjIdB, FldIdB
 //ASO: ObjIdB, FldIdB, ObjIdA, FldIdA
 //VAL: ObjId, FldId
 
-[InlineArray(16)]
+[StructLayout(LayoutKind.Explicit)]
 public struct FldValue
 {
+    [FieldOffset(0)]
+    public long Integer;
+
+    [FieldOffset(0)]
+    public DateTime DateTime;
+
+    [FieldOffset(0)]
+    public bool Bool;
+
+    [FieldOffset(0)]
+    public decimal Decimal;
+}
+
+[InlineArray(16)]
+public struct InlineData
+{
     public byte Data;
-
-    public static FldValue FromInt32(int intValue)
-    {
-        ReadOnlySpan<byte> intAsBytes = MemoryMarshal.AsBytes(
-            MemoryMarshal.CreateReadOnlySpan(ref intValue, 1)
-        );
-
-        FldValue fldValue = default;
-        Span<byte> fldValueAsBytes = MemoryMarshal.AsBytes(
-            MemoryMarshal.CreateSpan(ref fldValue, 1)
-        );
-
-        intAsBytes.CopyTo(fldValueAsBytes);
-
-        return fldValue;
-    }
-
-    public unsafe int ToInt32()
-    {
-        var c = this;
-        return *(int*)&c;
-    }
 }
 
 public enum ValueTyp : byte

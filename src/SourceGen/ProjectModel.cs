@@ -9,20 +9,27 @@ public class ProjectModel
 
     public static ProjectModel CreateFromDirectory(string dir)
     {
+        var options = new JsonSerializerOptions
+        {
+            IncludeFields = true,
+            PropertyNameCaseInsensitive = true
+        };
+        options.Converters.Add(new JsonStringEnumConverter());
+
         List<EntityDefinition> entities = [];
         foreach (var entityJson in Directory.EnumerateFiles(dir))
         {
-            var entity = JsonSerializer.Deserialize<EntityDefinition>(entityJson);
+            var entity = JsonSerializer.Deserialize<EntityDefinition>(File.ReadAllText(entityJson), options);
             entities.Add(entity!);
         }
 
-        var dict = entities.SelectMany(x => x.ReferenceFieldDefinitions).ToDictionary(x => x.Id, x => x);
+        var dict = entities.SelectMany(x => x.ReferenceFields).ToDictionary(x => x.Id, x => x);
         foreach (var entityDefinition in entities)
         {
-            foreach (var refField in entityDefinition.ReferenceFieldDefinitions)
+            foreach (var refField in entityDefinition.ReferenceFields)
             {
-                refField.OwningEntityDefinition = entityDefinition;
-                refField.OtherReferenceFieldDefinition = dict[refField.OtherReferenceFieldDefinitionGuid];
+                refField.OwningEntity = entityDefinition;
+                refField.OtherReferenceField = dict[refField.OtherReferenceFielGuid];
             }
         }
 
@@ -38,8 +45,8 @@ public class EntityDefinition
     public Guid Id;
     public string Key = "";
     public TranslationText Name;
-    public FieldDefinition[] FieldDefinitions;
-    public ReferenceFieldDefinition[] ReferenceFieldDefinitions;
+    public FieldDefinition[] Fields = [];
+    public ReferenceFieldDefinition[] ReferenceFields = [];
 }
 
 public class FieldDefinition
@@ -48,7 +55,6 @@ public class FieldDefinition
     public string Key = "";
     public TranslationText Name;
     public FieldDataType DataType;
-    public bool Mandatory;
 }
 
 public class ReferenceFieldDefinition
@@ -57,11 +63,12 @@ public class ReferenceFieldDefinition
     public string Key = "";
     public TranslationText Name;
     public RefType RefType;
-    public EntityDefinition OwningEntityDefinition;
+    public Guid OtherReferenceFielGuid;
 
-    public Guid OtherReferenceFieldDefinitionGuid;
+    [JsonIgnore]
+    public EntityDefinition OwningEntity;
 
-    [JsonIgnore] public ReferenceFieldDefinition OtherReferenceFieldDefinition;
+    [JsonIgnore] public ReferenceFieldDefinition OtherReferenceField;
 }
 
 public enum RefType
@@ -76,7 +83,8 @@ public enum FieldDataType
     Integer,
     Decimal,
     String,
-    DateTime
+    DateTime,
+    Boolean
 }
 
 public struct TranslationText

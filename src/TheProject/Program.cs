@@ -1,41 +1,24 @@
 ﻿using LightningDB;
 using TheProject;
-
-var model = ProjectModel.CreateFromDirectory("Model");
+using TheProject.Generated;
 
 var env = new LightningEnvironment("path.db");
 env.Open();
 
 using var transaction = new Transaction(env);
 
-var folderTypeId = Guid.NewGuid();
-var folderNameFieldId = Guid.NewGuid();
-var subFolderFieldId = Guid.NewGuid();
-var parentFolderFieldId = Guid.NewGuid();
+var folder = new Folder(transaction);
+folder.Name = "Hallo Johnny";
 
-var folder1 = transaction.CreateObj(folderTypeId);
-Console.WriteLine($"folder1: {folder1}");
-transaction.SetFldValue(folder1, folderNameFieldId, FldValue.FromInt32(420));
+var parentFolder = new Folder(transaction);
+folder.Parent = parentFolder; //todo what if the assoc is non nullable?
 
-var folder2 = transaction.CreateObj(folderTypeId);
-Console.WriteLine($"folder2: {folder2}");
-
-transaction.CreateAso(folder1, parentFolderFieldId, folder2, subFolderFieldId);
-
-Console.WriteLine("Iterating subfolders of folder2");
-foreach (var aso in transaction.EnumerateAso(folder2, subFolderFieldId))
+foreach (var subfolder in parentFolder.Subfolders)
 {
-    Console.WriteLine(aso.ObjId);
+    Console.WriteLine(subfolder.Name);
 }
 
-transaction.DeleteObj(folder2);
+transaction.Commit();
 
-transaction.DebugPrintAllValues();
 
-// var folderNameValue = transaction.GetFldValue(folder1, folderNameFieldId).ToInt32();
-// Console.WriteLine(folderNameValue);
-//
-// transaction.SetFldValue(folder1, folderNameFieldId, FldValue.FromInt32(0));
-// folderNameValue = transaction.GetFldValue(folder1, folderNameFieldId).ToInt32();
-// Console.WriteLine(folderNameValue);
 
