@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using LightningDB;
 
 namespace TheProject;
@@ -77,6 +76,7 @@ public struct Change
 // UserId = histId
 
 
+//do we want/need locks in here to ensure that there aren't multiple threads at the same time interacting with the transaction
 public sealed class Transaction : IDisposable
 {
     public LightningTransaction LightningTransaction;
