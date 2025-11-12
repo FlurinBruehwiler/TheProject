@@ -1,7 +1,7 @@
 ﻿using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 
-namespace TheProject;
+namespace Networking;
 
 public ref struct BinaryReader
 {
