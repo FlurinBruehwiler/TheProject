@@ -1,13 +1,57 @@
 ﻿using System.Net.WebSockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using MemoryPack;
 
 namespace Networking;
 
+public struct PendingRequest
+{
+    public Action<object> Callback;
+    public Type ResponseType;
+}
+
 public static class NetworkingClient
 {
-    public static async Task ProcessMessagesForWebSocket(WebSocket webSocket, object messageHandler)
+    public static Task<T> WaitForResponse<T>(Dictionary<Guid, PendingRequest> callbacks, Guid guid)
+    {
+        var tsc = new TaskCompletionSource<T>();
+
+        callbacks.Add(guid, new PendingRequest
+        {
+            ResponseType = typeof(T),
+            Callback = response =>
+            {
+                tsc.SetResult((T)response);
+            }
+        });
+
+        return tsc.Task;
+    }
+
+    public static Guid SendRequest(WebSocket webSocket, string methodName, object[] parameters, bool isNotification)
+    {
+        var requestGuid = Guid.NewGuid();
+
+        using var stream = WebSocketStream.CreateWritableMessageStream(webSocket, WebSocketMessageType.Binary);
+        using var writer = new BinaryWriter(stream, Encoding.Unicode, true);
+        writer.Write((byte)(isNotification ? MessageType.Notification : MessageType.Request));
+        writer.Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref requestGuid, 1)));
+        writer.Write(methodName);
+        writer.Write(parameters.Length);
+
+        foreach (var parameter in parameters)
+        {
+            var data = MemoryPackSerializer.Serialize(parameter.GetType(), parameter);
+            writer.Write(data.Length);
+            writer.Write(data);
+        }
+
+        return requestGuid;
+    }
+
+    public static async Task ProcessMessagesForWebSocket(WebSocket webSocket, object messageHandler, Dictionary<Guid, PendingRequest> callbacks)
     {
         while (webSocket.State == WebSocketState.Open)
         {
@@ -65,17 +109,23 @@ public static class NetworkingClient
             }
             else if (messageType == MessageType.Response)
             {
-                // var requestId = binaryReader.ReadGuid();
-                // binaryReader.Data.AsSlice();
-                //
-                // MemoryPackSerializer.Deserialize();
+                var requestId = binaryReader.ReadGuid();
+                var data = binaryReader.Data.Slice(binaryReader.CurrentOffset);
+
+                if (callbacks.Remove(requestId, out var pendingRequest))
+                {
+                    var obj = MemoryPackSerializer.Deserialize(pendingRequest.ResponseType, data);
+                    pendingRequest.Callback(obj);
+                }
+                else
+                {
+                    Console.WriteLine($"No request for id {requestId}");
+                }
             }
             else
             {
                 Console.WriteLine($"Invalid message type {messageType}");
             }
-
-            //get message header (
         }
     }
 }

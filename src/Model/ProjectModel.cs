@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace TheProject;
+namespace Model;
 
 public class ProjectModel
 {

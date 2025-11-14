@@ -1,20 +1,21 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
-using TheProject;
+using Model;
 
 namespace SourceGen;
 
 public static class ModelGenerator
 {
-    public static void Generate()
+    public static void Generate(string modelDirectory)
     {
-        var model = ProjectModel.CreateFromDirectory("Model");
+        var model = ProjectModel.CreateFromDirectory(modelDirectory);
 
         foreach (var entity in model.EntityDefinitions)
         {
             var sourceBuilder = new SourceBuilder();
 
             sourceBuilder.AppendLine("using System.Text;");
+            sourceBuilder.AppendLine("using Model;");
 
             sourceBuilder.AppendLine("namespace Server.Generated;");
             sourceBuilder.AppendLine();
@@ -128,7 +129,8 @@ public static class ModelGenerator
             sourceBuilder.RemoveIndent();
             sourceBuilder.AppendLine("}");
 
-            File.WriteAllText($"../../../../Server/Generated/{entity.Key}.cs", sourceBuilder.ToString());
+            var generatedPath = Path.Combine(modelDirectory, "../Generated", $"{entity.Key}.cs");
+            File.WriteAllText(generatedPath, sourceBuilder.ToString());
         }
     }
 

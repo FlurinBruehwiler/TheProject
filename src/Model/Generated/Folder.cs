@@ -1,5 +1,6 @@
 using System.Text;
-namespace TheProject.Generated;
+using Model;
+namespace Server.Generated;
 
 public struct Folder : ITransactionObject
 {

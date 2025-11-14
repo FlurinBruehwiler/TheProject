@@ -6,12 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>TheProject</RootNamespace>
+    <RootNamespace>Server</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="LightningDB" Version="0.19.1" />
-  </ItemGroup>
 
 
 

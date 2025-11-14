@@ -1,14 +1,14 @@
 ﻿using LightningDB;
 
-namespace TheProject;
+namespace Model;
 
-public class Environment
+public class PEnvironment
 {
     public required LightningEnvironment LightningEnvironment;
     public required LightningDatabase ObjectDb;
     public required LightningDatabase HistoryDb;
 
-    public static Environment Create()
+    public static PEnvironment Create()
     {
         var env = new LightningEnvironment("path.db");
         env.Open();
@@ -25,7 +25,7 @@ public class Environment
             Flags = DatabaseOpenFlags.Create
         });
 
-        return new Environment
+        return new PEnvironment
         {
             LightningEnvironment = env,
             ObjectDb = objDb,

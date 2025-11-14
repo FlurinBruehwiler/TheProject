@@ -1,12 +1,8 @@
 ﻿using System.Collections;
 
-namespace TheProject;
+namespace Model;
 
-public interface ITransactionObject
-{
-    Transaction _transaction { get; set; }
-    Guid _objId { get; set; }
-}
+
 
 public static class GeneratedCodeHelper
 {

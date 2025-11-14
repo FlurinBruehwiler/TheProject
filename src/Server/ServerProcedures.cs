@@ -1,4 +1,4 @@
-﻿namespace TheProject;
+﻿namespace Server;
 
 public class ServerProcedures
 {

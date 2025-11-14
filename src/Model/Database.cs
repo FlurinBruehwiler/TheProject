@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using LightningDB;
 
-namespace TheProject;
+namespace Model;
 
 public unsafe struct Slice<T> where T : unmanaged
 {
@@ -84,7 +84,7 @@ public sealed class Transaction : IDisposable
     public LightningDatabase ObjectDb;
     public LightningDatabase HistoryDb;
 
-    public Transaction(Environment environment)
+    public Transaction(PEnvironment environment)
     {
         LightningTransaction = environment.LightningEnvironment.BeginTransaction();
         Cursor = LightningTransaction.CreateCursor(environment.ObjectDb);

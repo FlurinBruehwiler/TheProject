@@ -7,10 +7,5 @@ public struct ServerStatus
 
 public interface IServerProcedures
 {
-    public ServerStatus GetStatus();
-}
-
-public interface IClientProcedures
-{
-
+    public Task<ServerStatus> GetStatus(int a, int b);
 }
