@@ -1,6 +1,9 @@
-﻿namespace Networking;
+﻿using MemoryPack;
 
-public struct ServerStatus
+namespace Networking;
+
+[MemoryPackable]
+public partial struct ServerStatus
 {
 
 }

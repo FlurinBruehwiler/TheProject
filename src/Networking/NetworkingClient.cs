@@ -21,10 +21,7 @@ public static class NetworkingClient
         callbacks.Add(guid, new PendingRequest
         {
             ResponseType = typeof(T),
-            Callback = response =>
-            {
-                tsc.SetResult((T)response);
-            }
+            Callback = response => { tsc.SetResult((T)response); }
         });
 
         return tsc.Task;
@@ -34,14 +31,23 @@ public static class NetworkingClient
     {
         var requestGuid = Guid.NewGuid();
 
+        Console.WriteLine($"Sending Request {methodName} ({requestGuid})");
+
         //todo avoid this memory alloc
 
         using var memStream = new MemoryStream();
         using var writer = new BinaryWriter(memStream, Encoding.Unicode, true);
         writer.Write((byte)(isNotification ? MessageType.Notification : MessageType.Request));
-        writer.Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref requestGuid, 1)));
-        writer.Write(methodName);
-        writer.Write(parameters.Length);
+
+        Span<byte> s = stackalloc byte[16];
+        MemoryMarshal.Write(s, requestGuid);
+        Console.WriteLine($"Writing bytes {string.Join(", ", s.ToArray())}");
+        writer.Write(s);
+
+        writer.Write(methodName.Length * 2); //times 2 because of utf16
+        writer.Write(methodName.AsSpan());
+
+        writer.Write((byte)parameters.Length);
 
         foreach (var parameter in parameters)
         {
@@ -71,6 +77,9 @@ public static class NetworkingClient
             if (messageType == MessageType.Request || messageType == MessageType.Notification)
             {
                 var requestId = binaryReader.ReadGuid();
+
+                Console.WriteLine($"Got Request with id {requestId}");
+
                 var procedureName = binaryReader.ReadUtf16String();
                 var argCount = binaryReader.ReadByte();
 
@@ -85,34 +94,87 @@ public static class NetworkingClient
 
                         for (int i = 0; i < argCount; i++)
                         {
-                            var offset = binaryReader.ReadInt32();
                             var length = binaryReader.ReadInt32();
-                            var parameterData = messageContent.Slice(offset, length);
+                            var parameterData = binaryReader.ReadSlice(length);
 
                             var paramType = parameters[i];
                             var paraObj = MemoryPackSerializer.Deserialize(paramType.ParameterType, parameterData, MemoryPackSerializerOptions.Default);
                             parameterObjects[i] = paraObj;
                         }
 
-                        var returnValue = method.Invoke(messageHandler, parameterObjects);
+                        Console.WriteLine($"Invoking method {procedureName}");
+                        var returnObject = method.Invoke(messageHandler, parameterObjects);
 
                         //if it is a notification, we don't send a response back
                         if (messageType == MessageType.Request)
                         {
-                            var res = MemoryPackSerializer.Serialize(returnValue, MemoryPackSerializerOptions.Default);
-                            byte[] response = new byte[res.Length + 1 + 4];
-                            response[0] = (byte)MessageType.Response;
+                            if (returnObject != null)
+                            {
+                                if (returnObject.GetType().IsAssignableTo(typeof(Task)))
+                                {
+                                    var returnTask = (Task)returnObject;
+                                    returnTask.ContinueWith(async t =>
+                                    {
+                                        try
+                                        {
+                                            Console.WriteLine($"Sending response for id {requestId}");
 
-                            MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref requestId, 1)).CopyTo(response.AsSpan(1));
-                            res.AsSpan().CopyTo(response.AsSpan(5));
+                                            //really bad pls fix.....
+                                            var r = t.GetType().GetProperty("Result").GetValue(returnObject);
 
-                            PNetworking.SendMessage(webSocket, response);
+                                            if (r != null)
+                                            {
+                                                var res = MemoryPackSerializer.Serialize(r.GetType(), r, MemoryPackSerializerOptions.Default);
+                                                byte[] response = new byte[res.Length + 1 + 16];
+                                                response[0] = (byte)MessageType.Response;
+
+                                                Span<byte> x = stackalloc byte[16];
+                                                MemoryMarshal.Write(x, requestId);
+                                                x.CopyTo(response.AsSpan(1));
+
+                                                Console.WriteLine($"Writing bytes {string.Join(", ", x.ToArray())}");
+
+                                                res.AsSpan().CopyTo(response.AsSpan(17));
+
+                                                await PNetworking.SendMessage(webSocket, response);
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Return type was null");
+                                            }
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            Console.WriteLine(e);
+                                        }
+                                    });
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Invalid return type, expected Task");
+                                }
+                            }
+                            else
+                            {
+                                //todo
+                                Console.WriteLine("Response was null");
+                            }
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine($"Arg count for {procedureName} doesn't match, got {argCount}, expected {parameters.Length}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Could not find procedure with name {procedureName}");
                 }
             }
             else if (messageType == MessageType.Response)
             {
+                Console.WriteLine("Got response");
+
                 var requestId = binaryReader.ReadGuid();
                 var data = binaryReader.Data.Slice(binaryReader.CurrentOffset);
 

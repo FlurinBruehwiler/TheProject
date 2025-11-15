@@ -6,31 +6,46 @@ using Networking;
 //we still want to serialize / deserialize everything, so we get the exact same behaviour
 //but we don't want a direct dependency on the WebSocket in the ServerProcedures
 
-Console.WriteLine("Hello, World!");
-
 var ws = new ClientWebSocket();
-await ws.ConnectAsync(new Uri("ws://localhost:8080"), CancellationToken.None);
+
+Console.WriteLine("Trying to connect...");
+await ws.ConnectAsync(new Uri("ws://localhost:8080/connect/"), CancellationToken.None);
 Console.WriteLine("Connected!");
 
 Dictionary<Guid, PendingRequest> pendingRequests = [];
-_ = NetworkingClient.ProcessMessagesForWebSocket(ws, new MessageHandler(), pendingRequests);
-
-var serverProcedures = new ServerProcedures(x =>
+_ = NetworkingClient.ProcessMessagesForWebSocket(ws, new ClientProceduresImpl(), pendingRequests).ContinueWith(x =>
 {
-    using var stream = WebSocketStream.CreateWritableMessageStream(ws, WebSocketMessageType.Binary);
-    x.CopyTo(stream);
+    Console.WriteLine(x.Exception?.ToString());
+}, TaskContinuationOptions.OnlyOnFaulted);
+
+IServerProcedures serverProcedures = new ServerProcedures(x =>
+{
+    try
+    {
+        x.Seek(0, SeekOrigin.Begin);
+        using var stream = WebSocketStream.CreateWritableMessageStream(ws, WebSocketMessageType.Binary);
+        x.CopyTo(stream);
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"Connection closed {e.Message}");
+    }
 }, pendingRequests);
 
 while (true)
 {
     var res = await serverProcedures.GetStatus(1, 2);
     Console.WriteLine(res);
+    await Task.Delay(1000);
 }
 
 namespace Client
 {
-    class MessageHandler
+    class ClientProceduresImpl : IClientProcedures
     {
-
+        public void Ping()
+        {
+            Console.WriteLine("Got ping");
+        }
     }
 }

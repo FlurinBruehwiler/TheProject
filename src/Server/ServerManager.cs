@@ -16,9 +16,13 @@ public class ServerManager
 
     public async Task ListenForConnections()
     {
+        var url = "http://localhost:8080/connect/";
+
         var listener = new HttpListener();
-        listener.Prefixes.Add("http://localhost:8080/connect");
+        listener.Prefixes.Add(url);
         listener.Start();
+
+        Console.WriteLine($"Listening on {url}");
 
         while (true)
         {
@@ -27,10 +31,13 @@ public class ServerManager
             {
                 var wsContext = await context.AcceptWebSocketAsync(subProtocol: null);
 
+                Console.WriteLine("Client connected!");
+
                 var connectedClient = new ConnectedClient
                 {
                     ClientProcedures = new ClientProcedures(x =>
                     {
+                        x.Seek(0, SeekOrigin.Begin);
                         using var stream = WebSocketStream.CreateWritableMessageStream(wsContext.WebSocket, WebSocketMessageType.Binary);
                         x.CopyTo(stream);
                     }, Callbacks)
@@ -38,7 +45,10 @@ public class ServerManager
 
                 ConnectedClients.Add(connectedClient);
 
-                _ = NetworkingClient.ProcessMessagesForWebSocket(wsContext.WebSocket, new ServerProceduresImpl(connectedClient), Callbacks);
+                _ = NetworkingClient.ProcessMessagesForWebSocket(wsContext.WebSocket, new ServerProceduresImpl(connectedClient), Callbacks).ContinueWith(x =>
+                {
+                    Console.WriteLine(x.Exception?.ToString());
+                }, TaskContinuationOptions.OnlyOnFaulted);;
             }
             else
             {

@@ -18,7 +18,9 @@ public ref struct BinaryReader
             return Guid.Empty;
         }
 
-        var guid = MemoryMarshal.Read<Guid>(Data.Slice(CurrentOffset));
+        var s = Data.Slice(CurrentOffset, 16);
+        Console.WriteLine($"Reading bytes {string.Join(", ", s.ToArray())}");
+        var guid = MemoryMarshal.Read<Guid>(s);
         CurrentOffset += 16;
         return guid;
     }
@@ -29,13 +31,13 @@ public ref struct BinaryReader
         {
             CurrentOffset++;
 
-
             HasError = true;
             return 0;
         }
-        CurrentOffset++;
 
-        return Data[CurrentOffset];
+        var b = Data[CurrentOffset];
+        CurrentOffset++;
+        return b;
     }
 
     public int ReadInt32()
@@ -52,21 +54,26 @@ public ref struct BinaryReader
         return 0;
     }
 
+    public ReadOnlySpan<byte> ReadSlice(int requestedLength)
+    {
+        if (!HasEnoughBytesRemaining(requestedLength))
+        {
+            HasError = true;
+            CurrentOffset += requestedLength;
+            return ReadOnlySpan<byte>.Empty;
+        }
+
+        var data = Data.Slice(CurrentOffset, requestedLength);
+
+        CurrentOffset += requestedLength;
+
+        return data;
+    }
+
     public ReadOnlySpan<char> ReadUtf16String()
     {
         var lengthOfStringInBytes = ReadInt32();
-
-        if (!HasEnoughBytesRemaining(lengthOfStringInBytes))
-        {
-            HasError = true;
-            CurrentOffset += lengthOfStringInBytes;
-            return ReadOnlySpan<char>.Empty;
-        }
-
-        var originalOffset = CurrentOffset;
-        CurrentOffset += lengthOfStringInBytes;
-
-        return MemoryMarshal.Cast<byte, char>(Data.Slice(originalOffset, lengthOfStringInBytes));
+        return MemoryMarshal.Cast<byte, char>(ReadSlice(lengthOfStringInBytes));
     }
 
     private bool HasEnoughBytesRemaining(int byteCount)

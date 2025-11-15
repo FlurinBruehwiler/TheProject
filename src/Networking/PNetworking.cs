@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -19,9 +20,10 @@ namespace Networking;
 
 public enum MessageType : byte
 {
-    Request = 0,
-    Response = 1,
-    Notification = 2
+    Invalid = 0,
+    Request = 1,
+    Response = 2,
+    Notification = 3
 }
 
 public static class UnsafeAccessors<T>
@@ -32,9 +34,9 @@ public static class UnsafeAccessors<T>
 
 public class PNetworking
 {
-    public static void SendMessage(WebSocket webSocket, Memory<byte> input)
+    public static ValueTask SendMessage(WebSocket webSocket, Memory<byte> input)
     {
-         webSocket.SendAsync(input, WebSocketMessageType.Binary, true, CancellationToken.None);
+         return webSocket.SendAsync(input, WebSocketMessageType.Binary, true, CancellationToken.None);
     }
 
     public static async Task<ReadOnlyMemory<byte>> GetNextMessage(WebSocket webSocket)
@@ -50,13 +52,25 @@ public class PNetworking
         WebSocketReceiveResult result;
         do
         {
-            result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
-            messageBuffer.AddRange(buffer.AsSpan(result.Count));
+            Console.WriteLine("Waiting for a message");
+
+            try
+            {
+                result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Connection Closed: {e.Message}");
+                return ReadOnlyMemory<byte>.Empty;
+            }
+
+
+            messageBuffer.AddRange(buffer.AsSpan(0, result.Count));
         }
         while (!result.EndOfMessage);
 
-        Memory<byte> arr = UnsafeAccessors<byte>.GetBackingArray(messageBuffer).AsMemory(0, messageBuffer.Count);
+        // Memory<byte> arr = UnsafeAccessors<byte>.GetBackingArray(messageBuffer).AsMemory(0, messageBuffer.Count);
 
-        return arr;
+        return messageBuffer.ToArray().AsMemory();
     }
 }
