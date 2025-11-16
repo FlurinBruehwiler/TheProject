@@ -1,8 +1,4 @@
-﻿using System.Net;
-using System.Net.Http.Headers;
-using System.Net.WebSockets;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Net.WebSockets;
 using Model;
 
 namespace Networking;
@@ -21,16 +17,10 @@ namespace Networking;
 
 public enum MessageType : byte
 {
-    Invalid = 0,
+    ConnectionClosed = 0,
     Request = 1,
     Response = 2,
-    Notification = 3
-}
-
-public static class UnsafeAccessors<T>
-{
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_items")]
-    public static extern ref T[] GetBackingArray(List<T> list);
+    Notification = 3,
 }
 
 public class PNetworking

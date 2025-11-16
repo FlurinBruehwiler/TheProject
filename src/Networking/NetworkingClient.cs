@@ -189,6 +189,10 @@ public static class NetworkingClient
                     Logging.Log(LogFlags.Error, $"No request for id {requestId}");
                 }
             }
+            else if (messageType == MessageType.ConnectionClosed)
+            {
+                Logging.Log(LogFlags.Info, "Client disconnected");
+            }
             else
             {
                 Logging.Log(LogFlags.Error, $"Invalid message type {messageType}");

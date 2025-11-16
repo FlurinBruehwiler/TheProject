@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 namespace Model;
 
@@ -17,12 +18,20 @@ public static class Logging
 {
     public static LogFlags LogFlags = LogFlags.All;
 
-    //todo structured logging / interpolated string handler
     public static void Log(LogFlags logFlags, string message)
     {
         if ((LogFlags & logFlags) != 0)
         {
             Console.WriteLine(message);
+        }
+    }
+
+    //todo structured logging
+    public static void Log(LogFlags logFlags, [InterpolatedStringHandlerArgument("logFlags")] LogInterpolatedStringHandler message)
+    {
+        if ((LogFlags & logFlags) != 0)
+        {
+            Console.WriteLine(message.GetFormattedText());
         }
     }
 
