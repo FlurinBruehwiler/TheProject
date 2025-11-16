@@ -4,9 +4,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Channels;
 using MemoryPack;
-using Model;
 
-namespace Networking;
+namespace Model;
 
 public struct PendingRequest
 {

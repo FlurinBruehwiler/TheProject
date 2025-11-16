@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 
-namespace Networking;
+namespace Model;
 
 public class ClientProcedures(Channel<Stream> sendMessage, Dictionary<Guid, PendingRequest> callbacks) : IClientProcedures
 {

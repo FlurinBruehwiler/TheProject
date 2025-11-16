@@ -1,4 +1,4 @@
-﻿namespace Networking;
+﻿namespace Model;
 
 public interface IClientProcedures
 {

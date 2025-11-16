@@ -1,6 +1,6 @@
 ﻿using MemoryPack;
 
-namespace Networking;
+namespace Model;
 
 [MemoryPackable]
 public partial struct ServerStatus
