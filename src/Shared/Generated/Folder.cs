@@ -1,23 +1,33 @@
+using System.Buffers;
 using System.Text;
+using MemoryPack;
 namespace Shared.Generated;
 
-public struct Folder : ITransactionObject
+[MemoryPackable]
+public partial struct Folder : ITransactionObject
 {
+    [Obsolete]
+    [MemoryPackConstructor]
+    public Folder() { }
     public Folder(Transaction transaction)
     {
         _transaction = transaction;
         _objId = _transaction.CreateObj(TypId);
     }
 
+    [MemoryPackIgnore]
     public Transaction _transaction { get; set; }
     public Guid _objId { get; set; }
 
+    [MemoryPackIgnore]
     public string Name
     {
         get => Encoding.Unicode.GetString(_transaction.GetFldValue(_objId, Fields.Name).AsSpan());
         set => _transaction.SetFldValue(_objId, Fields.Name, Encoding.Unicode.GetBytes(value).AsSpan().AsSlice());
     }
+    [MemoryPackIgnore]
     public AssocCollection<Folder> Subfolders => new(_transaction, _objId, Fields.Subfolders, Folder.Fields.Parent);
+    [MemoryPackIgnore]
     public Folder? Parent
     {
         get => GeneratedCodeHelper.GetNullableAssoc<Folder>(_transaction, _objId, Fields.Parent);

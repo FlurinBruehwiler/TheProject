@@ -15,17 +15,25 @@ public static class ModelGenerator
             var sourceBuilder = new SourceBuilder();
 
             sourceBuilder.AppendLine("using System.Text;");
+            sourceBuilder.AppendLine("using MemoryPack;");
 
             sourceBuilder.AppendLine("namespace Shared.Generated;");
             sourceBuilder.AppendLine();
 
-            sourceBuilder.AppendLine($"public struct {entity.Key} : ITransactionObject");
+            sourceBuilder.AppendLine("[MemoryPackable]");
+            sourceBuilder.AppendLine($"public partial struct {entity.Key} : ITransactionObject");
             sourceBuilder.AppendLine("{");
             sourceBuilder.AddIndent();
+
+            sourceBuilder.AppendLine("[Obsolete]");
+            sourceBuilder.AppendLine("[MemoryPackConstructor]");
+            sourceBuilder.AppendLine("public Folder() { }");
+
 
             sourceBuilder.AppendLine($"public {entity.Key}(Transaction transaction)");
             sourceBuilder.AppendLine("{");
             sourceBuilder.AddIndent();
+
             sourceBuilder.AppendLine("_transaction = transaction;");
             sourceBuilder.AppendLine("_objId = _transaction.CreateObj(TypId);");
             sourceBuilder.RemoveIndent();
@@ -33,6 +41,7 @@ public static class ModelGenerator
 
             sourceBuilder.AppendLine();
 
+            sourceBuilder.AppendLine("[MemoryPackIgnore]");
             sourceBuilder.AppendLine("public Transaction _transaction { get; set; }");
             sourceBuilder.AppendLine("public Guid _objId { get; set; }");
             sourceBuilder.AppendLine();
@@ -70,6 +79,7 @@ public static class ModelGenerator
                 };
 
                 //could be improving performance here....
+                sourceBuilder.AppendLine("[MemoryPackIgnore]");
                 sourceBuilder.AppendLine($"public {dataType} {field.Key}");
                 sourceBuilder.AppendLine("{");
                 sourceBuilder.AddIndent();
@@ -86,6 +96,7 @@ public static class ModelGenerator
                     var optional = refField.RefType == RefType.SingleOptional ? "?" : string.Empty;
                     var getMethod = refField.RefType == RefType.SingleOptional ? "GetNullableAssoc" : "GetAssoc";
 
+                    sourceBuilder.AppendLine("[MemoryPackIgnore]");
                     sourceBuilder.AppendLine($"public {refField.OtherReferenceField.OwningEntity.Key}{optional} {refField.Key}");
                     sourceBuilder.AppendLine("{");
                     sourceBuilder.AddIndent();
@@ -98,6 +109,7 @@ public static class ModelGenerator
                 }
                 else if (refField.RefType == RefType.Multiple)
                 {
+                    sourceBuilder.AppendLine("[MemoryPackIgnore]");
                     sourceBuilder.AppendLine($"public AssocCollection<{refField.OtherReferenceField.OwningEntity.Key}> {refField.Key} => new(_transaction, _objId, Fields.{refField.Key}, {refField.OtherReferenceField.OwningEntity.Key}.Fields.{refField.OtherReferenceField.Key});");
                 }
             }

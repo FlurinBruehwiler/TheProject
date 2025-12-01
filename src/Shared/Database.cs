@@ -87,6 +87,7 @@ public sealed class Transaction : IDisposable
     public Transaction(Environment environment)
     {
         LightningTransaction = environment.LightningEnvironment.BeginTransaction();
+
         Cursor = LightningTransaction.CreateCursor(environment.ObjectDb);
         ObjectDb = environment.ObjectDb;
         HistoryDb = environment.HistoryDb;
@@ -158,7 +159,12 @@ public sealed class Transaction : IDisposable
         MemoryMarshal.Write(keyBuf.Slice(16, 16), typId);
 
         var result = LightningTransaction.Put(ObjectDb, keyBuf, [(byte)ValueTyp.Obj]);
-        Debug.Assert(result == MDBResultCode.Success);
+
+        if (result != MDBResultCode.Success)
+        {
+            Console.WriteLine(result);
+            Debug.Assert(false);
+        }
 
         AddHistoryEntry(new Change
         {

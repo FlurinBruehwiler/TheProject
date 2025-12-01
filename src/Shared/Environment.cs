@@ -10,12 +10,15 @@ public class Environment
 
     public static Environment Create()
     {
-        var env = new LightningEnvironment("path.db");
+        var env = new LightningEnvironment("database", new EnvironmentConfiguration
+        {
+            MaxDatabases = 128
+        });
         env.Open();
 
         using var lightningTransaction = env.BeginTransaction();
 
-        var objDb = lightningTransaction.OpenDatabase(name: "ObjectDb", new DatabaseConfiguration
+        var objDb = lightningTransaction.OpenDatabase(null, new DatabaseConfiguration
         {
             Flags = DatabaseOpenFlags.Create
         });

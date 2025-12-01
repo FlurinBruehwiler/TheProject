@@ -13,6 +13,14 @@ public struct PendingRequest
     public Type ResponseType;
 }
 
+public class ServiceProvider : IServiceProvider
+{
+    public object? GetService(Type serviceType)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 public static class NetworkingClient
 {
     public static Task<T> WaitForResponse<T>(Dictionary<Guid, PendingRequest> callbacks, Guid guid)
@@ -51,7 +59,7 @@ public static class NetworkingClient
 
         foreach (var parameter in parameters)
         {
-            var data = MemoryPackSerializer.Serialize(parameter.GetType(), parameter);
+            var data = MemoryPackSerializer.Serialize(parameter.GetType(), parameter, SerializerOptions);
             writer.Write(data.Length);
             writer.Write(data);
         }
@@ -60,6 +68,11 @@ public static class NetworkingClient
 
         return requestGuid;
     }
+
+    public static MemoryPackSerializerOptions SerializerOptions = MemoryPackSerializerOptions.Default with
+    {
+        ServiceProvider = new ServiceProvider()
+    };
 
     public static async Task ProcessMessagesForWebSocket(WebSocket webSocket, Channel<Stream> messagesToSend, object messageHandler, Dictionary<Guid, PendingRequest> callbacks)
     {
@@ -98,7 +111,7 @@ public static class NetworkingClient
                             var parameterData = binaryReader.ReadSlice(length);
 
                             var paramType = parameters[i];
-                            var paraObj = MemoryPackSerializer.Deserialize(paramType.ParameterType, parameterData, MemoryPackSerializerOptions.Default);
+                            var paraObj = MemoryPackSerializer.Deserialize(paramType.ParameterType, parameterData, SerializerOptions);
                             parameterObjects[i] = paraObj;
                         }
 
@@ -124,7 +137,7 @@ public static class NetworkingClient
 
                                             if (r != null)
                                             {
-                                                var res = MemoryPackSerializer.Serialize(r.GetType(), r, MemoryPackSerializerOptions.Default);
+                                                var res = MemoryPackSerializer.Serialize(r.GetType(), r, SerializerOptions);
                                                 byte[] response = new byte[res.Length + 1 + 16];
                                                 response[0] = (byte)MessageType.Response;
 
@@ -179,7 +192,7 @@ public static class NetworkingClient
 
                 if (callbacks.Remove(requestId, out var pendingRequest))
                 {
-                    var obj = MemoryPackSerializer.Deserialize(pendingRequest.ResponseType, data);
+                    var obj = MemoryPackSerializer.Deserialize(pendingRequest.ResponseType, data, SerializerOptions);
                     pendingRequest.Callback(obj);
                 }
                 else

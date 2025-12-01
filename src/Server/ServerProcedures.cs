@@ -1,4 +1,5 @@
 ﻿using Shared;
+using Shared.Generated;
 
 namespace Server;
 
@@ -8,5 +9,12 @@ public class ServerProceduresImpl(ConnectedClient connectedClient) : IServerProc
     {
         Logging.Log(LogFlags.Business, "Getting Status");
         return Task.FromResult(default(ServerStatus));
+    }
+
+    public Task<Folder> GetSomeObjs()
+    {
+        var folder = new Folder();
+
+        return Task.FromResult(folder);
     }
 }
