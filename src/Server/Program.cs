@@ -11,17 +11,22 @@ var env = Shared.Environment.Create();
 
 {
     var tsx = new Transaction(env);
-
     var folder = new Folder(tsx);
-    folder.Name = "Hi";
+    folder.Name = "Anita";
+    Console.WriteLine(folder.Name);
 
-    // var tsx2 = new Transaction(env);
-    // var folder2 = new Folder(tsx2);
-    // folder2.Name = "Foo";
-    //
-    // tsx2.Commit();
+    var folder2 = new Folder(tsx);
+    folder2.Name = "Max";
+    Console.WriteLine(folder2.Name);
 
-    tsx.Commit();
+    var folder3 = new Folder(tsx);
+    folder3.Name = "Wynn";
+    Console.WriteLine(folder3.Name);
+
+    var result = Searcher.Search<Folder>(tsx, new FieldCriterion { FieldId = Folder.Fields.Name, Value = "Max" }).ToArray();
+
+    Console.WriteLine(result.Length == 1);
+    Console.WriteLine(result.First() == folder2);
 }
 
 

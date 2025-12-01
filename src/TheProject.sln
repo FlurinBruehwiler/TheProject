@@ -13,7 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".SolutionItems", ".SolutionItems", "{9317B310-E762-400A-8DF2-320CD5F305EA}"
 	ProjectSection(SolutionItems) = preProject
-		..\notes.md = ..\notes.md
+		..\networking.md = ..\networking.md
+		..\database.md = ..\database.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground", "Playground\Playground.csproj", "{4374B05E-0F9A-4BB3-A531-0F632BBFED1A}"

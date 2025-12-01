@@ -116,7 +116,12 @@ public static class ModelGenerator
 
             sourceBuilder.AppendLine();
 
-            sourceBuilder.AppendLine($"public static readonly Guid TypId = {GetGuidLiteral(entity.Id)};");
+            sourceBuilder.AppendLine($"public static bool operator ==({entity.Key} a, {entity.Key} b) => a._objId == b._objId;");
+            sourceBuilder.AppendLine($"public static bool operator !=({entity.Key} a, {entity.Key} b) => a._objId != b._objId;");
+
+            sourceBuilder.AppendLine();
+
+            sourceBuilder.AppendLine($"public static Guid TypId {{ get; }} = {GetGuidLiteral(entity.Id)};");
             sourceBuilder.AppendLine();
 
             sourceBuilder.AppendLine($"public static class Fields");

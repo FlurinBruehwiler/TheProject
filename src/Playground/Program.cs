@@ -6,47 +6,28 @@ class Program
 {
     static void Main()
     {
-        // Specify the path to the database environment
-        using var env = new LightningEnvironment("path_to_your_database", new EnvironmentConfiguration
+        var overlay = new SortedDictionary<byte[], string>(ByteArrayComparer.Instance);
+    }
+
+
+}
+
+class ByteArrayComparer : IComparer<byte[]>
+{
+    public static ByteArrayComparer Instance { get; } = new();
+
+    public int Compare(byte[]? a, byte[]? b)
+    {
+        if (ReferenceEquals(a, b)) return 0;
+        if (a == null) return -1;
+        if (b == null) return 1;
+
+        int len = Math.Min(a.Length, b.Length);
+        for (int i = 0; i < len; i++)
         {
-            MaxDatabases = 128
-        });
-        env.Open();
-
-        LightningDatabase mainDb;
-
-        // Begin a transaction and open (or create) a database
-        using (var tx = env.BeginTransaction())
-        {
-            //maindb
-            mainDb = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            {
-                // Put a key-value pair into the database
-                tx.Put(mainDb, Encoding.UTF8.GetBytes("hello"), Encoding.UTF8.GetBytes("world"));
-            }
-
-            using (var db = tx.OpenDatabase("testDb", configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
-            {
-                // Put a key-value pair into the database
-                tx.Put(db, Encoding.UTF8.GetBytes("hello"), Encoding.UTF8.GetBytes("world"));
-            }
-
-            tx.Commit();
+            int diff = a[i].CompareTo(b[i]);
+            if (diff != 0) return diff;
         }
-
-        // Begin a read-only transaction to retrieve the value
-        using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
-        // using (var db = tx.OpenDatabase())
-        {
-            var (resultCode, key, value) = tx.Get(mainDb, Encoding.UTF8.GetBytes("hello"));
-            if (resultCode == MDBResultCode.Success)
-            {
-                Console.WriteLine($"{Encoding.UTF8.GetString(key.AsSpan())}: {Encoding.UTF8.GetString(value.AsSpan())}");
-            }
-            else
-            {
-                Console.WriteLine("Key not found.");
-            }
-        }
+        return a.Length.CompareTo(b.Length);
     }
 }

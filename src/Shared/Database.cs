@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -54,6 +55,16 @@ public enum ChangeType : byte
     FldChanged
 }
 
+[StructLayout(LayoutKind.Explicit)]
+public struct ObjValue
+{
+    [FieldOffset(0)]
+    public ValueTyp ValueTyp;
+
+    [FieldOffset(1)]
+    public Guid TypId;
+}
+
 public struct Change
 {
     public ChangeType ChangeType;
@@ -96,6 +107,20 @@ public sealed class Transaction : IDisposable
     public void Commit()
     {
         LightningTransaction.Commit();
+    }
+
+    public Guid GetTypId(Guid objId)
+    {
+        var keyBuf = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref objId, 1));
+
+        var (resultCode, key, value) = LightningTransaction.Get(ObjectDb, keyBuf);
+
+        if (resultCode == MDBResultCode.Success)
+        {
+            return MemoryMarshal.Read<ObjValue>(value.AsSpan()).TypId;
+        }
+
+        return Guid.Empty;
     }
 
     public void DeleteObj(Guid id)
@@ -154,11 +179,16 @@ public sealed class Transaction : IDisposable
         //but I'm not sure if this will actually work
         var id = Guid.CreateVersion7();
 
-        Span<byte> keyBuf = stackalloc byte[2 * 16];
-        MemoryMarshal.Write(keyBuf.Slice(0, 16), id);
-        MemoryMarshal.Write(keyBuf.Slice(16, 16), typId);
+        var val = new ObjValue
+        {
+            TypId = typId,
+            ValueTyp = ValueTyp.Obj
+        };
 
-        var result = LightningTransaction.Put(ObjectDb, keyBuf, [(byte)ValueTyp.Obj]);
+        var keyBuf = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref id, 1));
+        var valueBuf = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref val, 1));
+
+        var result = LightningTransaction.Put(ObjectDb, keyBuf, valueBuf);
 
         if (result != MDBResultCode.Success)
         {
@@ -328,6 +358,7 @@ public sealed class Transaction : IDisposable
         return new Slice<byte>(v.AsSpan().Slice(1));
     }
 
+    //todo avoid overhead of enumerating aso
     public Guid? GetSingleAsoValue(Guid objId, Guid fldId)
     {
         using var enumerator = EnumerateAso(objId, fldId).GetEnumerator();
@@ -348,6 +379,27 @@ public sealed class Transaction : IDisposable
         var cursor = LightningTransaction.CreateCursor(ObjectDb);
 
         return new AsoFldEnumerable(cursor, objId, fldId);
+    }
+
+    //todo write manual enumerator that doesn't allocate!!!
+    public IEnumerable<(Guid objId, Guid typId)> EnumerateObjs()
+    {
+        var result = Cursor.SetRange([0]);
+        if (result == MDBResultCode.Success)
+        {
+            do
+            {
+                var current = Cursor.GetCurrent();
+                var currentKey = current.key.AsSpan();
+                var currentValue = current.value.AsSpan();
+
+                if (currentValue[0] == (byte)ValueTyp.Obj)
+                {
+                    yield return (MemoryMarshal.Read<Guid>(currentKey), MemoryMarshal.Read<ObjValue>(currentValue).TypId);
+                }
+            }
+            while (Cursor.Next().resultCode == MDBResultCode.Success);
+        }
     }
 
     public void Dispose()

@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Text;
 using MemoryPack;
 namespace Shared.Generated;
@@ -34,7 +33,10 @@ public partial struct Folder : ITransactionObject
         set => GeneratedCodeHelper.SetAssoc(_transaction, _objId, Fields.Parent, value?._objId ?? Guid.Empty, Folder.Fields.Subfolders);
     }
 
-    public static readonly Guid TypId = new Guid([139, 189, 204, 163, 86, 34, 75, 65, 164, 2, 26, 9, 28, 180, 7, 165]);
+    public static bool operator ==(Folder a, Folder b) => a._objId == b._objId;
+    public static bool operator !=(Folder a, Folder b) => a._objId != b._objId;
+
+    public static Guid TypId { get; } = new Guid([139, 189, 204, 163, 86, 34, 75, 65, 164, 2, 26, 9, 28, 180, 7, 165]);
 
     public static class Fields
     {
