@@ -363,25 +363,34 @@ public class BPlusTree
 
     public class Cursor(BPlusTree tree)
     {
-        private bool success;
         private byte[] key;
         private byte[] value;
 
-        public void SetRange(byte[] inputKey)
+        public ResultCode SetRange(byte[] inputKey)
         {
-            (key, value, success) = tree.SearchGreaterOrEqualsThan(tree._root, inputKey, false);
+            (key, value, var s) = tree.SearchGreaterOrEqualsThan(tree._root, inputKey, false);
+            return s ? ResultCode.NotFound : ResultCode.Success;
         }
 
-        public (bool success, byte[] key, byte[] value) GetCurrent()
+        public (ResultCode resultCode, byte[] key, byte[] value) GetCurrent()
         {
-            return (success, key, value);
+            return (ResultCode.Success, key, value);
         }
 
-        public (bool success, byte[] key, byte[] value) Next()
+        public (ResultCode resultCode, byte[] key, byte[] value) Next()
         {
             //don't search again from the top...
-            (key, value, success) = tree.SearchGreaterOrEqualsThan(tree._root, key, true);
-            return (!success, key, value);
+            var(k, v, r) = tree.SearchGreaterOrEqualsThan(tree._root, key, true);
+
+            if (r)
+            {
+                return (ResultCode.NotFound, [], []);
+            }
+
+            key = k;
+            value = v;
+
+            return (ResultCode.Success, key, value);
         }
 
         public ResultCode Delete()

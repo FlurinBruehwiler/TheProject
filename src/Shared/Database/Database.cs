@@ -108,13 +108,13 @@ public enum ValueFlag : byte{
 //This replicates the LMDB API, we could put it behind an interface so that the three KV stores (LMDB, ChangeSet, LMDB + Changeset) have the same api.
 public sealed class TransactionalKvStore
 {
-    public LightningTransaction ReadTransaction;
-    public LightningDatabase Database;
+    public required LightningTransaction ReadTransaction;
+    public required LightningDatabase Database;
 
     //todo we should combine these changesets, the problem is, we need a flag to indicate if a value was deleted or not,
     //if we have the flag in the value, we have to copy the value around (to insert the flag at the beginning),
     //so we could also just append it to the key, which is usually smaller....
-    public BPlusTree ChangeSet;
+    public readonly BPlusTree ChangeSet = new();
 
     public ResultCode Put(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
     {
@@ -122,7 +122,7 @@ public sealed class TransactionalKvStore
         // DeleteChangeSet.Delete(key.ToArray());
 
         //todo, don't call ToArray
-        return ChangeSet.Put(key.ToArray(), value.ToArray());
+        return ChangeSet.Put(key.ToArray(), WrapValue(value.ToArray(), ValueFlag.AddModify));
     }
 
     private static byte[] WrapValue(ReadOnlySpan<byte> data, ValueFlag flag)
@@ -140,7 +140,7 @@ public sealed class TransactionalKvStore
         //check the lmdb transaction
 
         //todo don't call ToArray
-        var (additiveResult, _, newValue) = ChangeSet.Get(key.ToArray());
+        var (additiveResult, _, newValue) = ChangeSet.Get(key);
         if (additiveResult == ResultCode.Success)
         {
             if(newValue[0] == (byte)ValueFlag.Delete)
@@ -185,12 +185,15 @@ public sealed class TransactionalKvStore
         public required LightningCursor LightningCursor;
         public required BPlusTree.Cursor ChangeSetCursor;
 
+        public bool BaseIsFinished;
+        public bool ChangeIsFinished;
+
         public required BPlusTree ChangeSet;
 
         public ResultCode SetRange(ReadOnlySpan<byte> key)
         {
-            LightningCursor.SetRange(key);
-            ChangeSetCursor.SetRange(key.ToArray());
+            BaseIsFinished = LightningCursor.SetRange(key) == MDBResultCode.NotFound;
+            ChangeIsFinished = ChangeSetCursor.SetRange(key.ToArray()) == ResultCode.NotFound;
             //DeleteCursor.SetRange(key.ToArray());
 
             return ResultCode.Success;
@@ -223,9 +226,9 @@ public sealed class TransactionalKvStore
             //return the lower, if both are the same, return changeSet
 
             var comp = BPlusTree.CompareSpan(baseSet.key.AsSpan(), changeSet.key.AsSpan());
-            if (comp < 0)
+            if (comp < 0 && !BaseIsFinished)
             {
-                // baseSet is smaller than changeSet
+                 // baseSet is smaller than changeSet
                 return (ResultCode.Success, baseSet.key.CopyToNewArray(), baseSet.value.CopyToNewArray());
             }
 
@@ -249,14 +252,16 @@ public sealed class TransactionalKvStore
             var comp = BPlusTree.CompareSpan(a.key.AsSpan(), b.key.AsSpan());
             if (comp <= 0)
             {
-                LightningCursor.Next();
+                BaseIsFinished = LightningCursor.Next().resultCode == MDBResultCode.NotFound;
             }
 
-            if (comp >= 0)
+            if (BaseIsFinished || comp >= 0)
             {
                 var (result, _, value) = ChangeSetCursor.Next();
 
-                if (result)
+                ChangeIsFinished = result == ResultCode.NotFound;
+
+                if (result == ResultCode.Success)
                 {
                     if (value[0] == (byte)ValueFlag.Delete)
                     {
@@ -264,6 +269,9 @@ public sealed class TransactionalKvStore
                     }
                 }
             }
+
+            if (ChangeIsFinished && BaseIsFinished)
+                return (ResultCode.NotFound, [], []);
 
             return GetCurrent();
         }

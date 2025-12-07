@@ -109,12 +109,12 @@ public class BPlusTreeTests
         {
             var n = cursor.Next();
 
-            Assert.True(n.success);
+            Assert.Equal(ResultCode.Success, n.resultCode);
             Assert.Equal(B(i), n.key);
             Assert.Equal(B((byte)(i * 2)), n.value);
         }
 
-        Assert.False(cursor.Next().success);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
     }
 
     [Fact]
@@ -138,12 +138,12 @@ public class BPlusTreeTests
         {
             var n = cursor.Next();
 
-            Assert.True(n.success);
+            Assert.Equal(ResultCode.Success, n.resultCode);
             Assert.Equal(B(i), n.key);
             Assert.Equal(B((byte)(i * 2)), n.value);
         }
 
-        Assert.False(cursor.Next().success);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
     }
 
     [Fact]
