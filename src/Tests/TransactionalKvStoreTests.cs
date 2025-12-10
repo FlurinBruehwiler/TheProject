@@ -220,6 +220,69 @@ public class TransactionalKvStoreTests(Fixture fixture) : IClassFixture<Fixture>
     }
 
     [Fact]
+    public void Cursor_Simple_2()
+    {
+        var env = new LightningEnvironment($"{Fixture.TestDirectory}/{nameof(Cursor_Simple_2)}");
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+
+            tx.Put(db, [2], [3]);
+            tx.Commit();
+        }
+
+        using var rtx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        var store = new TransactionalKvStore
+        {
+            Database = db,
+            ReadTransaction = rtx,
+        };
+
+        store.Put([1], [2]);
+
+        var cursor = store.CreateCursor();
+        cursor.SetRange([1]);
+
+        Assert.Equal([(byte)2], cursor.GetCurrent().value);
+        Assert.Equal([(byte)3], cursor.Next().value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
+    }
+
+    [Fact]
+    public void Cursor_Simple_3()
+    {
+        var env = new LightningEnvironment($"{Fixture.TestDirectory}/{nameof(Cursor_Simple_3)}");
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+
+            tx.Put(db, [1], [2]);
+            tx.Commit();
+        }
+
+        using var rtx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        var store = new TransactionalKvStore
+        {
+            Database = db,
+            ReadTransaction = rtx,
+        };
+
+        store.Put([1], [3]);
+
+        var cursor = store.CreateCursor();
+        cursor.SetRange([1]);
+
+        Assert.Equal([(byte)3], cursor.GetCurrent().value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
+    }
+
+    [Fact]
     public void Cursor_Complex()
     {
         var env = new LightningEnvironment($"{Fixture.TestDirectory}/{nameof(Cursor_Complex)}");
@@ -301,6 +364,153 @@ public class TransactionalKvStoreTests(Fixture fixture) : IClassFixture<Fixture>
         Assert.Equal([(byte)4], cursor.Next().value);
         Assert.Equal([(byte)10], cursor.Next().value);
         Assert.Equal([(byte)12], cursor.Next().value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
+    }
+
+    [Fact]
+    public void Cursor_Delete()
+    {
+        var env = new LightningEnvironment($"{Fixture.TestDirectory}/{nameof(Cursor_Delete)}");
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+
+            tx.Put(db, [4], [8]);
+            tx.Put(db, [5], [10]);
+            tx.Put(db, [6], [12]);
+
+            tx.Commit();
+        }
+
+        using var rtx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        var store = new TransactionalKvStore
+        {
+            Database = db,
+            ReadTransaction = rtx,
+        };
+
+
+        store.Delete([5]);
+
+        var cursor = store.CreateCursor();
+        cursor.SetRange([0]);
+
+        Assert.Equal([(byte)8], cursor.GetCurrent().value);
+        Assert.Equal([(byte)12], cursor.Next().value);
+
+        Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
+    }
+
+    [Fact]
+    public void Cursor_Delete_2()
+    {
+        var env = new LightningEnvironment($"{Fixture.TestDirectory}/{nameof(Cursor_Delete_2)}");
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+
+            tx.Put(db, [4], [8]);
+            tx.Put(db, [5], [10]);
+            tx.Put(db, [6], [12]);
+
+            tx.Commit();
+        }
+
+        using var rtx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        var store = new TransactionalKvStore
+        {
+            Database = db,
+            ReadTransaction = rtx,
+        };
+
+
+        store.Delete([6]);
+
+        var cursor = store.CreateCursor();
+        cursor.SetRange([0]);
+
+        Assert.Equal([(byte)8], cursor.GetCurrent().value);
+        Assert.Equal([(byte)10], cursor.Next().value);
+
+        Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
+    }
+
+    [Fact]
+    public void Cursor_Delete_3()
+    {
+        var env = new LightningEnvironment($"{Fixture.TestDirectory}/{nameof(Cursor_Delete_3)}");
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+
+            tx.Put(db, [4], [8]);
+            tx.Put(db, [5], [10]);
+            tx.Put(db, [6], [12]);
+
+            tx.Commit();
+        }
+
+        using var rtx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        var store = new TransactionalKvStore
+        {
+            Database = db,
+            ReadTransaction = rtx,
+        };
+
+
+        store.Delete([4]);
+
+        var cursor = store.CreateCursor();
+        cursor.SetRange([0]);
+
+        Assert.Equal([(byte)10], cursor.GetCurrent().value);
+        Assert.Equal([(byte)12], cursor.Next().value);
+
+        Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
+    }
+
+    [Fact]
+    public void Cursor_Delete_4()
+    {
+        var env = new LightningEnvironment($"{Fixture.TestDirectory}/{nameof(Cursor_Delete_4)}");
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+
+            tx.Put(db, [4], [8]);
+            tx.Put(db, [5], [10]);
+            tx.Put(db, [6], [12]);
+
+            tx.Commit();
+        }
+
+        using var rtx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        var store = new TransactionalKvStore
+        {
+            Database = db,
+            ReadTransaction = rtx,
+        };
+
+
+        store.Delete([4]);
+        store.Delete([5]);
+        store.Delete([6]);
+
+        var cursor = store.CreateCursor();
+        cursor.SetRange([0]);
+
         Assert.Equal(ResultCode.NotFound, cursor.Next().resultCode);
     }
 }

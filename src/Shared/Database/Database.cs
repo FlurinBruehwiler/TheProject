@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Diagnostics;
-using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using LightningDB;
@@ -196,6 +195,17 @@ public sealed class TransactionalKvStore
             ChangeIsFinished = ChangeSetCursor.SetRange(key.ToArray()) == ResultCode.NotFound;
             //DeleteCursor.SetRange(key.ToArray());
 
+            if (!ChangeIsFinished && !BaseIsFinished)
+            {
+                var a = LightningCursor.GetCurrent();
+                var b = ChangeSetCursor.GetCurrent();
+
+                if (BPlusTree.CompareSpan(a.key.AsSpan(), b.key) == 0 && b.value[0] == (byte)ValueFlag.Delete)
+                {
+                    return Next().resultCode;
+                }
+            }
+
             return ResultCode.Success;
         }
 
@@ -250,47 +260,60 @@ public sealed class TransactionalKvStore
             var b = ChangeSetCursor.GetCurrent();
 
             var comp = BPlusTree.CompareSpan(a.key.AsSpan(), b.key.AsSpan());
-            if (!BaseIsFinished && comp <= 0)
-            {
-                BaseIsFinished = LightningCursor.Next().resultCode == MDBResultCode.NotFound;
-            }
-            else if (comp >= 0)
-            {
-                var (result, _, value) = ChangeSetCursor.Next();
 
-                ChangeIsFinished = result == ResultCode.NotFound;
-
-                if (result == ResultCode.Success)
+            if (comp == 0)
+            {
+                AdvanceBase();
+                if (AdvanceChange())
                 {
-                    if (value[0] == (byte)ValueFlag.Delete)
+                    goto next;
+                }
+            }
+            else
+            {
+                if (ChangeIsFinished || (!BaseIsFinished && comp < 0))
+                {
+                    AdvanceBase();
+                    if (b.value[0] == (byte)ValueFlag.Delete && BPlusTree.CompareSpan(LightningCursor.GetCurrent().key.AsSpan(), b.key.AsSpan()) == 0)
                     {
                         goto next;
                     }
                 }
-
-                goto end;
-            }
-
-            if (BaseIsFinished)
-            {
-                var (result, _, value) = ChangeSetCursor.Next();
-
-                ChangeIsFinished = result == ResultCode.NotFound;
-
-                if (result == ResultCode.Success)
+                else if (BaseIsFinished || (!ChangeIsFinished && comp > 0))
                 {
-                    if (value[0] == (byte)ValueFlag.Delete)
+                    if (AdvanceChange())
                     {
                         goto next;
                     }
                 }
             }
 
-            end:
             if (ChangeIsFinished && BaseIsFinished)
                 return (ResultCode.NotFound, [], []);
 
             return GetCurrent();
+
+            void AdvanceBase()
+            {
+                BaseIsFinished = LightningCursor.Next().resultCode == MDBResultCode.NotFound;
+            }
+
+            bool AdvanceChange()
+            {
+                var (result, _, value) = ChangeSetCursor.Next();
+
+                ChangeIsFinished = result == ResultCode.NotFound;
+
+                if (result == ResultCode.Success)
+                {
+                    if (value[0] == (byte)ValueFlag.Delete)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
     }
 }
