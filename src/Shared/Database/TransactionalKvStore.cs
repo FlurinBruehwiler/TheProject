@@ -9,9 +9,9 @@ public sealed class TransactionalKvStore : IDisposable
     public readonly LightningDatabase Database;
     public readonly LightningEnvironment Environment;
 
-    //todo we should combine these changesets, the problem is, we need a flag to indicate if a value was deleted or not,
     //if we have the flag in the value, we have to copy the value around (to insert the flag at the beginning),
-    //so we could also just append it to the key, which is usually smaller....
+    //so we could also just append it to the key, which is usually smaller...., but this would lead to incorrect sorting, so it is not an option
+    //so the flag is in the beginning of the value
     public readonly BPlusTree ChangeSet = new();
 
     public TransactionalKvStore(LightningEnvironment env, LightningDatabase database)
@@ -23,7 +23,7 @@ public sealed class TransactionalKvStore : IDisposable
 
     public void Commit()
     {
-        var writeTransaction = Environment.BeginTransaction();
+        using var writeTransaction = Environment.BeginTransaction();
 
         //loop over changeset and apply changes
         var cursor = ChangeSet.CreateCursor();
@@ -48,13 +48,12 @@ public sealed class TransactionalKvStore : IDisposable
 
             } while (cursor.Next().resultCode == ResultCode.Success);
         }
+
+        writeTransaction.Commit();
     }
 
     public ResultCode Put(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
     {
-        //remove from deleteChangeSet if exists
-        // DeleteChangeSet.Delete(key.ToArray());
-
         //todo, don't call ToArray
         return ChangeSet.Put(key.ToArray(), WrapValue(value.ToArray(), ValueFlag.AddModify));
     }
@@ -114,15 +113,17 @@ public sealed class TransactionalKvStore : IDisposable
         return arr;
     }
 
+    //This has to be a class, because the LightningCursor is a class,
+    //and we don't want accidental copies of this cursor to point to the same underlying lightning cursor.
+    //we could make it work, if the struct doesn't hold any other state, other than the LightningCursor, but I don't think this is possible
     public class Cursor : IDisposable
     {
         public required LightningCursor LightningCursor;
         public required BPlusTree.Cursor ChangeSetCursor;
+        public required BPlusTree ChangeSet;
 
         public bool BaseIsFinished;
         public bool ChangeIsFinished;
-
-        public required BPlusTree ChangeSet;
 
         public ResultCode SetRange(ReadOnlySpan<byte> key)
         {
@@ -183,11 +184,8 @@ public sealed class TransactionalKvStore : IDisposable
 
         public (ResultCode resultCode, byte[] key, byte[] value) Next()
         {
-            //we are currently on a value, it is either from the read or the change dataset
-            //both read and change have a current value
-            //we take the lower of the two and call next
-
-            //if both are the same, we advance both. GetCurrent returns the lower value!
+            //Unfortunately, this logic here is non-trivial.
+            //I haven't figured out a way to make it simple, the only thing we have for now is a lot of tests.
 
             next:
             var a = LightningCursor.GetCurrent();

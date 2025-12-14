@@ -39,11 +39,11 @@ public sealed class DbSession : IDisposable
 
     public void Commit()
     {
-        //todo do we want to make this async?
-        lock (Environment)
-        {
-            Store.Commit();
-        }
+        //so this will work differently in the future, right now this just commits the data to LMDB,
+        //but we want to have our SaveAction on Validation logic before that.
+        //so the alternative design, which may be better is to first update the readonly transaction of the TKV to the current version,
+        //then execute all saveaction/validations, and only then commit
+        Store.Commit();
     }
 
     /// <summary>
