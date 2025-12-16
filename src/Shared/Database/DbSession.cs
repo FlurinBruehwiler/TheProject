@@ -355,6 +355,7 @@ public sealed class DbSession : IDisposable
     public T GetObjFromGuid<T>(Guid objId) where T : ITransactionObject, new()
     {
         //i'm not sure if this function is at the right place....
+        //we should also validate that this object exists and has the right type
         return new T
         {
             ObjId = objId,

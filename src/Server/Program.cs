@@ -11,44 +11,27 @@ try
 {
     var env = Shared.Environment.Create([Folder.Fields.Name]);
 
-    Guid flurinFolder;
-
     using (var tsx = new DbSession(env))
     {
         new Folder(tsx)
         {
-            Name = "Flurin"
-        };
-
-        flurinFolder = new Folder(tsx)
-        {
-            Name = "Flurin Brühwiler"
-        }.ObjId;
-
-        new Folder(tsx)
-        {
-            Name = "Firefox"
+            Name = "Hallo Flurin"
         };
 
         new Folder(tsx)
         {
-            Name = "Anna"
+            Name = "Brühwiler Flurin der Erste"
         };
 
-        tsx.Commit();
-    }
-
-    Searcher.BuildSearchIndex(env);
-
-    using (var tsx = new DbSession(env))
-    {
         new Folder(tsx)
         {
-            Name = "Flurin 2"
+            Name = "Flu Flu"
         };
 
-        var f = tsx.GetObjFromGuid<Folder>(flurinFolder);
-        f.Name = "Johnny";
+        new Folder(tsx)
+        {
+            Name = "Anna max Wynn"
+        };
 
         tsx.Commit();
     }
@@ -59,16 +42,7 @@ try
         foreach (var folder in Searcher.Search<Folder>(t, new FieldCriterion
                  {
                      FieldId = Folder.Fields.Name,
-                     Value = "Flu"
-                 }))
-        {
-            Console.WriteLine(folder.Name);
-        }
-
-        foreach (var folder in Searcher.Search<Folder>(t, new FieldCriterion
-                 {
-                     FieldId = Folder.Fields.Name,
-                     Value = "nna"
+                     Value = "Flurin"
                  }))
         {
             Console.WriteLine(folder.Name);
