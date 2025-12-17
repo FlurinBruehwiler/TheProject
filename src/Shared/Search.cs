@@ -109,7 +109,6 @@ public static class Searcher
                 {
                     var (r, _, v) = txn.Get(environment.ObjectDb, key);
 
-
                     if (r == MDBResultCode.Success) //the value already existed, we remove it
                     {
                         var oldValue = v.AsSpan().Slice(1);
@@ -170,7 +169,7 @@ public static class Searcher
         ConstructNonStringIndexKey(comparison, fieldId, from, minKey);
 
         Span<byte> maxKey = stackalloc byte[GetNonStringKeySize<T>()];
-        ConstructNonStringIndexKey(comparison, fieldId, to, minKey);
+        ConstructNonStringIndexKey(comparison, fieldId, to, maxKey);
 
         var set = new HashSet<Guid>();
 

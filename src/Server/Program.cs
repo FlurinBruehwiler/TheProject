@@ -11,19 +11,22 @@ try
 {
     var env = Shared.Environment.Create(new Dictionary<Guid, IndexType>
     {
-        { Folder.Fields.Name, IndexType.String }
+        { Folder.Fields.Name, IndexType.String },
+        { Folder.Fields.TestDateField, IndexType.DateTime },
     });
 
     using (var tsx = new DbSession(env))
     {
         new Folder(tsx)
         {
-            Name = "Hallo Flurin"
+            Name = "Hallo Flurin",
+            TestDateField = new DateTime(2004, 09, 13),
         };
 
         new Folder(tsx)
         {
-            Name = "Brühwiler Flurin der Erste"
+            Name = "Foo der Erste flurin",
+            TestDateField = new DateTime(2004, 09, 13),
         };
 
         new Folder(tsx)
@@ -47,26 +50,51 @@ try
     {
         using var t = new DbSession(env);
 
-        foreach (var matchType in Enum.GetValues<SearchCriterion.StringCriterion.MatchType>())
+        var result = Searcher.Search<Folder>(t, new SearchCriterion
         {
-            Console.WriteLine(matchType + ":");
-
-            foreach (var folder in Searcher.Search<Folder>(t, new SearchCriterion
-                     {
-                         Type = SearchCriterion.CriterionType.String,
-                         String = new SearchCriterion.StringCriterion
-                         {
-                             FieldId = Folder.Fields.Name,
-                             Value = "FLurIN",
-                             Type = matchType
-                         }
-                     }))
+            Type = SearchCriterion.CriterionType.DateTime,
+            DateTime = new SearchCriterion.DateTimeCriterion
             {
-                Console.WriteLine(folder.Name);
+                FieldId = Folder.Fields.TestDateField,
+                From = new DateTime(2003, 1, 1),
+                To = new DateTime(2005, 1, 1)
             }
+        },new SearchCriterion
+        {
+            Type = SearchCriterion.CriterionType.String,
+            String = new SearchCriterion.StringCriterion
+            {
+                FieldId = Folder.Fields.Name,
+                Value = "flurin",
+                Type = SearchCriterion.StringCriterion.MatchType.Substring
+            }
+        });
 
-            Console.WriteLine();
+        foreach (Folder folder in result)
+        {
+            Console.WriteLine(folder.Name);
         }
+
+        // foreach (var matchType in Enum.GetValues<SearchCriterion.StringCriterion.MatchType>())
+        // {
+        //     Console.WriteLine(matchType + ":");
+        //
+        //     foreach (var folder in Searcher.Search<Folder>(t, new SearchCriterion
+        //              {
+        //                  Type = SearchCriterion.CriterionType.String,
+        //                  String = new SearchCriterion.StringCriterion
+        //                  {
+        //                      FieldId = Folder.Fields.Name,
+        //                      Value = "FLurIN",
+        //                      Type = matchType
+        //                  }
+        //              }))
+        //     {
+        //         Console.WriteLine(folder.Name);
+        //     }
+        //
+        //     Console.WriteLine();
+        // }
     }
 }
 catch (Exception e)
