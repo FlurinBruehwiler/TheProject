@@ -60,7 +60,7 @@ public static class Searcher
         using var txn = environment.LightningEnvironment.BeginTransaction();
 
         using var cursor = txn.CreateCursor(environment.ObjectDb);
-        if (cursor.SetRange([0]) == MDBResultCode.Success)
+        if (cursor.First().resultCode == MDBResultCode.Success)
         {
             do
             {
@@ -250,46 +250,92 @@ public static class Searcher
             var prefixBackwardKey = ConstructStringIndexKey(IndexFlag.Reverse, criterion.FieldId, strValue);
             Collect(prefixBackwardKey, exact: false);
         }
-        else if (criterion.Type == SearchCriterion.StringCriterion.MatchType.Substring)
+        else if (criterion.Type == SearchCriterion.StringCriterion.MatchType.Fuzzy && strValue.Length >= 3)
         {
-            //ngram search
-            if (strValue.Length >= 3)
+            //this is very primitive fuzzy searching, we just count the number of ngram matches and if it is above a cutoff, we count it as a match.
+
+            Dictionary<Guid, int> matchingObjs = [];
+
+            for (int i = 0; i < strValue.Length - 2; i++)
             {
-                HashSet<Guid> lastRound = [];
-                HashSet<Guid> thisRound = [];
+                var ngramKey = ConstructStringIndexKey(IndexFlag.NGram, criterion.FieldId, strValue.AsSpan().Slice(i, 3));
 
-                for (int i = 0; i < strValue.Length - 2; i++)
+                if (cursor.SetKey(ngramKey).resultCode == MDBResultCode.Success)
                 {
-                    var ngramKey = ConstructStringIndexKey(IndexFlag.NGram, criterion.FieldId, strValue.AsSpan().Slice(i, 3));
-
-                    if (cursor.SetRange(ngramKey) == MDBResultCode.Success)
+                    do
                     {
-                        do
+                        var (_, _, value) = cursor.GetCurrent();
+
+                        var guid = MemoryMarshal.Read<Guid>(value.AsSpan());
+
+                        if (matchingObjs.TryGetValue(guid, out var currentCount))
                         {
-                            var (_, key, value) = cursor.GetCurrent();
+                            matchingObjs[guid] = currentCount + 1;
+                        }
+                        else
+                        {
+                            matchingObjs.Add(guid, 1);
+                        }
 
-                            if (!key.AsSpan().StartsWith(ngramKey))
-                                break;
-
-                            var guid = MemoryMarshal.Read<Guid>(value.AsSpan());
-
-                            if (i == 0 || lastRound.Contains(guid))
-                            {
-                                thisRound.Add(guid);
-                            }
-                        } while (cursor.Next().resultCode == MDBResultCode.Success);
-                    }
-
-                    if (thisRound.Count == 0)
-                        break;
-
-                    (thisRound, lastRound) = (lastRound, thisRound);
-                    thisRound.Clear();
+                    } while (cursor.NextDuplicate().resultCode == MDBResultCode.Success);
                 }
+            }
 
-                foreach (var guid in lastRound)
+            foreach (var (guid, ngramMatches) in matchingObjs)
+            {
+                var searchTermNgramCount = strValue.Length - 2;
+
+                if ((float)ngramMatches / searchTermNgramCount >= criterion.FuzzyCutoff)
                 {
                     set.Add(guid);
+                }
+            }
+        }
+        else if (criterion.Type == SearchCriterion.StringCriterion.MatchType.Substring && strValue.Length >= 3)
+        {
+            //ngram search
+            HashSet<Guid> lastRound = [];
+            HashSet<Guid> thisRound = [];
+
+            for (int i = 0; i < strValue.Length - 2; i++)
+            {
+                var ngramKey = ConstructStringIndexKey(IndexFlag.NGram, criterion.FieldId, strValue.AsSpan().Slice(i, 3));
+
+                if (cursor.SetKey(ngramKey).resultCode == MDBResultCode.Success)
+                {
+                    do
+                    {
+                        var (_, _, value) = cursor.GetCurrent();
+
+                        var guid = MemoryMarshal.Read<Guid>(value.AsSpan());
+
+                        if (i == 0 || lastRound.Contains(guid))
+                        {
+                            thisRound.Add(guid);
+                        }
+                    } while (cursor.NextDuplicate().resultCode == MDBResultCode.Success);
+                }
+
+                if (thisRound.Count == 0)
+                    break;
+
+                (thisRound, lastRound) = (lastRound, thisRound);
+                thisRound.Clear();
+            }
+
+            Span<byte> keyBuf = stackalloc byte[2 * 16];
+            foreach (var guid in lastRound)
+            {
+                MemoryMarshal.Write(keyBuf.Slice(0*16, 16), guid);
+                MemoryMarshal.Write(keyBuf.Slice(1*16, 16), criterion.FieldId);
+
+                var (r, _, v) = transaction.Get(environment.ObjectDb, keyBuf);
+                if (r == MDBResultCode.Success)
+                {
+                    if (MemoryMarshal.Cast<byte, char>(v.AsSpan().Slice(1)).Contains(strValue.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        set.Add(guid);
+                    }
                 }
             }
         }

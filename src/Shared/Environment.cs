@@ -21,7 +21,7 @@ public class Environment
             Directory.Delete(dbName, recursive: true);
         }
 
-        var env = new LightningEnvironment("database", new EnvironmentConfiguration
+        var env = new LightningEnvironment(dbName, new EnvironmentConfiguration
         {
             MaxDatabases = 128
         });

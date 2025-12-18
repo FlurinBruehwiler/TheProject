@@ -60,6 +60,12 @@ public struct SearchCriterion
         public Guid FieldId;
         public string Value;
         public MatchType Type;
+        public float FuzzyCutoff = 0.5f;
+
+        public StringCriterion()
+        {
+
+        }
 
         public enum MatchType
         {
@@ -67,6 +73,7 @@ public struct SearchCriterion
             Exact,
             Prefix,
             Postfix,
+            Fuzzy
         }
     }
 }
