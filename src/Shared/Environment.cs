@@ -93,18 +93,18 @@ public class CustomIndexComparer : IComparer<MDBValue>
 
         return comparison switch
         {
-            Comparison.SignedLong => CompareT<long>(aData, bData),
-            Comparison.DateTime => CompareT<DateTime>(aData, bData),
-            Comparison.Decimal => CompareT<decimal>(aData, bData),
+            Comparison.SignedLong => CompareGeneric<long>(aData, bData),
+            Comparison.DateTime => CompareGeneric<DateTime>(aData, bData),
+            Comparison.Decimal => CompareGeneric<decimal>(aData, bData),
             Comparison.Assoc => BPlusTree.CompareSpan(aData, bData),
             Comparison.Type => BPlusTree.CompareSpan(aData, bData),
             _ => throw new ArgumentOutOfRangeException()
         };
+    }
 
-        int CompareT<T>(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y) where T : unmanaged, IComparable<T>
-        {
-            return MemoryMarshal.Read<T>(x).CompareTo(MemoryMarshal.Read<T>(y));
-        }
+    public static int CompareGeneric<T>(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y) where T : unmanaged, IComparable<T>
+    {
+        return MemoryMarshal.Read<T>(x).CompareTo(MemoryMarshal.Read<T>(y));
     }
 
     public int Compare(MDBValue a, MDBValue b)

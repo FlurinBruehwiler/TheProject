@@ -49,7 +49,7 @@ public class SearchTests
             }
         });
 
-        Assert.Equal([barbapapaFolder], result);
+        AssertEqual([barbapapaFolder], result);
     }
 
     [Theory]
@@ -86,7 +86,7 @@ public class SearchTests
             }
         });
 
-        Assert.Equal([folderB], result);
+        AssertEqual([folderB], result);
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class SearchTests
             }
         });
 
-        Assert.Equal([folderB], result);
+        AssertEqual([folderB], result);
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public class SearchTests
             }
         });
 
-        Assert.Equal([folderB], result);
+        AssertEqual([folderB], result);
 
         var result2 = Searcher.Search<TestingFolder>(tsx, new SearchCriterion
         {
@@ -165,7 +165,161 @@ public class SearchTests
             }
         });
 
-        Assert.Equal([folderA], result2);
+        AssertEqual([folderA], result2);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DateTime_Search(bool indexed)
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        testModel.FieldsById[TestingFolder.Fields.Name].IsIndexed = indexed;
+
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var startOfDay = new TestingFolder(tsx)
+        {
+            TestDateField = new DateTime(2000, 09, 13)
+        };
+
+        var middleOfDay = new TestingFolder(tsx)
+        {
+            TestDateField = new DateTime(2000, 09, 13, hour: 8, 0, 0)
+        };
+
+        var previousDay = new TestingFolder(tsx)
+        {
+            TestDateField = new DateTime(2000, 09, 12)
+        };
+
+        var nextDay = new TestingFolder(tsx)
+        {
+            TestDateField = new DateTime(2000, 09, 14)
+        };
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new SearchCriterion
+        {
+            Type = SearchCriterion.CriterionType.DateTime,
+            DateTime = new SearchCriterion.DateTimeCriterion
+            {
+                FieldId  = TestingFolder.Fields.TestDateField,
+                From = new DateTime(2000, 09, 13),
+                To = new DateTime(2000, 09, 13).AddDays(1).AddTicks(-1)
+            }
+        });
+
+        AssertEqual([startOfDay, middleOfDay], result);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Decimal_Search(bool indexed)
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        testModel.FieldsById[TestingFolder.Fields.TestDecimalField].IsIndexed = indexed;
+
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folder1 = new TestingFolder(tsx)
+        {
+            TestDecimalField = 14
+        };
+
+        var folder2 = new TestingFolder(tsx)
+        {
+            TestDecimalField = 15
+        };
+
+        var folder5 = new TestingFolder(tsx)
+        {
+            TestDecimalField = 17
+        };
+
+        var folder3 = new TestingFolder(tsx)
+        {
+            TestDecimalField = 20
+        };
+
+        var folder4 = new TestingFolder(tsx)
+        {
+            TestDecimalField = 21
+        };
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new SearchCriterion
+        {
+            Type = SearchCriterion.CriterionType.Decimal,
+            Decimal = new SearchCriterion.DecimalCriterion
+            {
+                FieldId  = TestingFolder.Fields.TestDecimalField,
+                From = 15,
+                To = 20
+            }
+        });
+
+        AssertEqual([folder2, folder5, folder3], result);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Integer_Search(bool indexed)
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        testModel.FieldsById[TestingFolder.Fields.TestIntegerField].IsIndexed = indexed;
+
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folder1 = new TestingFolder(tsx)
+        {
+            TestIntegerField = 14,
+        };
+
+        var folder2 = new TestingFolder(tsx)
+        {
+            TestIntegerField = 15
+        };
+
+        var folder5 = new TestingFolder(tsx)
+        {
+            TestIntegerField = 17
+        };
+
+        var folder3 = new TestingFolder(tsx)
+        {
+            TestIntegerField = 20
+        };
+
+        var folder4 = new TestingFolder(tsx)
+        {
+            TestIntegerField = 21
+        };
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new SearchCriterion
+        {
+            Type = SearchCriterion.CriterionType.Long,
+            Long = new SearchCriterion.LongCriterion
+            {
+                FieldId  = TestingFolder.Fields.TestIntegerField,
+                From = 15,
+                To = 20
+            }
+        });
+
+        AssertEqual([folder2, folder5, folder3], result);
     }
 
     [Fact]
@@ -187,8 +341,11 @@ public class SearchTests
 
         var result = Searcher.Search<TestingFolder>(tsx);
 
-        TestingFolder[] expected = [folderA, folderB];
+        AssertEqual([folderA, folderB], result);
+    }
 
-        Assert.Equal(expected.OrderBy(x => x.ObjId, new GuidComparer()) , result.OrderBy(x => x.ObjId, new GuidComparer()));
+    private void AssertEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual) where T : ITransactionObject
+    {
+        Assert.Equal(expected.OrderBy(x => x.ObjId, new GuidComparer()) , actual.OrderBy(x => x.ObjId, new GuidComparer()));
     }
 }

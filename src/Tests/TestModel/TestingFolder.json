@@ -31,6 +31,15 @@
       },
       "datatype": "Decimal",
       "isIndexed": true
+    },
+    {
+      "id": "71D87FDD-7415-49CD-9204-44D43073DF9D",
+      "key": "TestIntegerField",
+      "name": {
+        "en": "A Integer field used for testing"
+      },
+      "datatype": "Integer",
+      "isIndexed": true
     }
   ],
   "referenceFields": [

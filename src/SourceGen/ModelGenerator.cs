@@ -54,7 +54,7 @@ public static class ModelGenerator
             {
                 var dataType = field.DataType switch
                 {
-                    FieldDataType.Integer => "int",
+                    FieldDataType.Integer => "long",
                     FieldDataType.Decimal => "decimal",
                     FieldDataType.String => "string",
                     FieldDataType.DateTime => "DateTime",
@@ -64,7 +64,7 @@ public static class ModelGenerator
 
                 var toFunction = field.DataType switch
                 {
-                    FieldDataType.Integer => "MemoryMarshal.Read<int>({0})",
+                    FieldDataType.Integer => "MemoryMarshal.Read<long>({0})",
                     FieldDataType.Decimal => "MemoryMarshal.Read<decimal>({0})",
                     FieldDataType.String => "Encoding.Unicode.GetString({0})",
                     FieldDataType.DateTime => "MemoryMarshal.Read<DateTime>({0})",
@@ -74,7 +74,7 @@ public static class ModelGenerator
 
                 var fromFunction = field.DataType switch
                 {
-                    FieldDataType.Integer => "new Slice<int>(&value, 1).AsByteSlice()",
+                    FieldDataType.Integer => "new Slice<long>(&value, 1).AsByteSlice()",
                     FieldDataType.Decimal => "new Slice<decimal>(&value, 1).AsByteSlice()",
                     FieldDataType.String => "Encoding.Unicode.GetBytes(value).AsSpan().AsSlice()",
                     FieldDataType.DateTime => "new Slice<DateTime>(&value, 1).AsByteSlice()",

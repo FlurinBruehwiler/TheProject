@@ -41,6 +41,12 @@ public partial struct TestingFolder : ITransactionObject, IEquatable<TestingFold
         set => DbSession.SetFldValue(ObjId, Fields.TestDecimalField, new Slice<decimal>(&value, 1).AsByteSlice());
     }
     [MemoryPackIgnore]
+    public unsafe long TestIntegerField
+    {
+        get => MemoryMarshal.Read<long>(DbSession.GetFldValue(ObjId, Fields.TestIntegerField).AsSpan());
+        set => DbSession.SetFldValue(ObjId, Fields.TestIntegerField, new Slice<long>(&value, 1).AsByteSlice());
+    }
+    [MemoryPackIgnore]
     public AssocCollection<TestingFolder> Subfolders => new(DbSession, ObjId, Fields.Subfolders, TestingFolder.Fields.Parent);
     [MemoryPackIgnore]
     public TestingFolder? Parent
@@ -63,6 +69,7 @@ public partial struct TestingFolder : ITransactionObject, IEquatable<TestingFold
         public static readonly Guid Name = new Guid([123, 108, 105, 24, 93, 11, 106, 64, 159, 76, 242, 232, 48, 204, 15, 85]);
         public static readonly Guid TestDateField = new Guid([77, 177, 175, 25, 230, 230, 250, 79, 148, 123, 180, 184, 97, 208, 17, 142]);
         public static readonly Guid TestDecimalField = new Guid([106, 146, 178, 37, 125, 231, 31, 74, 186, 117, 157, 60, 118, 172, 125, 215]);
+        public static readonly Guid TestIntegerField = new Guid([221, 127, 216, 113, 21, 116, 205, 73, 146, 4, 68, 212, 48, 115, 223, 157]);
         public static readonly Guid Subfolders = new Guid([118, 212, 11, 180, 163, 217, 84, 69, 162, 246, 79, 119, 96, 192, 255, 228]);
         public static readonly Guid Parent = new Guid([167, 173, 160, 131, 83, 186, 119, 72, 130, 98, 189, 71, 82, 14, 234, 199]);
     }

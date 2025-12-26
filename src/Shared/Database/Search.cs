@@ -9,7 +9,7 @@ namespace Shared.Database;
 //todo at one point we also want the functionality to search the non-commited data (these wouldn't need an index)
 
 //todo the following features need to be implemented
-// [ ] implement search of non indexed values fields, ok the problem with this is, that with the current architecture,
+// [x] implement search of non indexed values fields, ok the problem with this is, that with the current architecture,
 //          objects are not grouped by type, we can still implement non-indexed search, but it is not very efficient.
 //          We could try to either group by type, or even more extreme, group by field, which would lead to an SOA,
 //          which would be very efficient when searching. The problem its, that this would make other things more complex,
@@ -212,8 +212,8 @@ public static class Searcher
             case SearchCriterion.AssocCriterion.AssocCriterionType.MatchGuid:
 
                 Span<byte> key = stackalloc byte[2 * 16];
-                MemoryMarshal.Write<Guid>(key, criterion.ObjId);
-                MemoryMarshal.Write<Guid>(key.Slice(16), fld.OtherReferenceFielGuid);
+                MemoryMarshal.Write(key, criterion.ObjId);
+                MemoryMarshal.Write(key.Slice(16), fld.OtherReferenceFielGuid);
 
                 var set = new List<Guid>();
 
@@ -234,9 +234,9 @@ public static class Searcher
             case SearchCriterion.AssocCriterion.AssocCriterionType.Null:
                 //we have decided that for now we won't index these two cases (null and notnull) as it would be quite expensive,
                 //and it is not clear if it is worth it.
-                throw new NotImplementedException();
+                break;
             case SearchCriterion.AssocCriterion.AssocCriterionType.NotNull:
-                throw new NotImplementedException();
+                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -244,7 +244,7 @@ public static class Searcher
         throw new NotImplementedException();
     }
 
-    private static Guid[] ExecuteNonStringSearch<T>(Environment environment, LightningTransaction transaction, CustomIndexComparer.Comparison comparison, Guid fieldId, T from, T to) where T : unmanaged
+    private static Guid[] ExecuteNonStringSearch<T>(Environment environment, LightningTransaction transaction, CustomIndexComparer.Comparison comparison, Guid fieldId, T from, T to) where T : unmanaged, IComparable<T>
     {
         var fld = environment.Model.FieldsById.GetValueOrDefault(fieldId);
 
@@ -264,9 +264,9 @@ public static class Searcher
             {
                 var val = GetFldValue<byte>(environment, transaction, objId, fieldId);
 
-                if (CustomIndexComparer.CompareStatic(val, from.AsSpan()) > 0)
+                if (CustomIndexComparer.CompareGeneric<T>(val, from.AsSpan()) >= 0)
                 {
-                    if (CustomIndexComparer.CompareStatic(val, to.AsSpan()) < 0)
+                    if (CustomIndexComparer.CompareGeneric<T>(val, to.AsSpan()) <= 0)
                     {
                         result.Add(objId);
                     }
@@ -544,7 +544,7 @@ public static class Searcher
         destination[0] = (byte)comparison;
         fieldId.AsSpan().CopyTo(destination.Slice(1));
 
-        MemoryMarshal.Write<T>(destination.Slice(1 + 16), data);
+        MemoryMarshal.Write(destination.Slice(1 + 16), data);
     }
 
     private static byte[] ConstructStringIndexKey(IndexFlag indexFlag, Guid fieldId, ReadOnlySpan<char> stringValue)
