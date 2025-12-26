@@ -36,6 +36,8 @@ public class SearchTests
             Name = "Barbapapa"
         };
 
+        var unnamedFolder = new TestingFolder(tsx);
+
         tsx.Commit();
 
         var result = Searcher.Search<TestingFolder>(tsx, new StringCriterion
@@ -310,6 +312,102 @@ public class SearchTests
         var result = Searcher.Search<TestingFolder>(tsx);
 
         AssertEqual([folderA, folderB], result);
+    }
+
+    [Fact]
+    public void SubQuery_Search()
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folderA = new TestingFolder(tsx)
+        {
+            Name = "Foo"
+        };
+
+        var folderB = new TestingFolder(tsx)
+        {
+            Parent = folderA
+        };
+
+        var folderC = new TestingFolder(tsx)
+        {
+            Name = "Bar"
+        };
+
+        var folderD = new TestingFolder(tsx)
+        {
+            Parent = folderC
+        };
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new AssocCriterion
+        {
+            FieldId = TestingFolder.Fields.Parent,
+            Type = AssocCriterion.AssocCriterionType.Subquery,
+            SearchCriterion = new StringCriterion
+            {
+                FieldId = TestingFolder.Fields.Name,
+                Type = StringCriterion.MatchType.Exact,
+                Value = "Foo"
+            }
+        });
+
+        AssertEqual([folderB], result);
+    }
+
+    [Fact]
+    public void LogicalAnd_Search()
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folderA = new TestingFolder(tsx)
+        {
+            Name = "Foo",
+            TestDateField = new DateTime(2004, 09, 13)
+        };
+
+        var folderB = new TestingFolder(tsx)
+        {
+            Name = "Foo",
+            TestIntegerField = 42,
+            TestDecimalField = 300.45M
+        };
+
+        var folderC = new TestingFolder(tsx)
+        {
+            Name = "Bar",
+            TestDateField = new DateTime(2004, 09, 13),
+            TestDecimalField = 20.3M
+        };
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new AndCriterion()
+        {
+            AndCombinations = [
+                new StringCriterion
+                {
+                    FieldId = TestingFolder.Fields.Name,
+                    Type = StringCriterion.MatchType.Exact,
+                    Value = "Foo"
+                },
+                new DateTimeCriterion
+                {
+                    FieldId = TestingFolder.Fields.TestDateField,
+                    From = new DateTime(2004, 09, 13),
+                    To = new DateTime(2004, 09, 13).AddDays(1).AddTicks(-1)
+                }
+            ]
+        });
+
+        AssertEqual([folderA], result);
     }
 
     private void AssertEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual) where T : ITransactionObject

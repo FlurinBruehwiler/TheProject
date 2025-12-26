@@ -20,9 +20,9 @@ namespace Shared.Database;
 // [ ] implement partial results
 // [ ] implement result info (for example in a substring search, we want to see the part of the substring that matched
 // [ ] implement profiling (we want to see what searches are slow, so the user can add indexes to these fields
-// [ ] implement more complex operators (not only AND, but also OR)
-// [ ] implement sub queries
-// [ ] implement assoc null/not null search (without indexing for now..)
+// [x] implement more complex operators (not only AND, but also OR)
+// [x] implement sub queries
+// [ ] implement default value search (assoc null/not null, 0/not 0, empty datetime/nonempty datetime) (without indexing for now..)
 // [ ] implement better substring/fuzzy search
 // [ ] improve the performance (reducing allocations)
 // [x] implement search by type (indexed)
@@ -95,19 +95,17 @@ public static class Searcher
 
                 int i = 0;
 
-                Func<Guid, bool> resultAdd = (guid) =>
-                {
-                    if (i == 0 || lastRound.Contains(guid))
-                    {
-                        thisRound.Add(guid);
-                    }
-
-                    return true;
-                };
-
                 foreach (var crit in andCriterion.AndCombinations)
                 {
-                    SearchInternal(dbSession, crit, resultAdd);
+                    SearchInternal(dbSession, crit, (guid) =>
+                    {
+                        if (i == 0 || lastRound.Contains(guid)) //todo check if this works with the closure and such
+                        {
+                            thisRound.Add(guid);
+                        }
+
+                        return true;
+                    });
 
                     thisRound.Clear();
 
