@@ -86,7 +86,6 @@ public class ReferenceFieldDefinition
     public TranslationText Name;
     public RefType RefType;
     public Guid OtherReferenceFielGuid;
-    public bool IsIndexed;
 
     [JsonIgnore]
     public EntityDefinition OwningEntity;

@@ -1,9 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using LightningDB;
-using Shared.Database;
 
-namespace Shared;
+namespace Shared.Database;
 
 //key: [flag][fldid][value]:[obj]
 
@@ -80,7 +79,7 @@ public static class Searcher
         }
     }
 
-    public static void xcfd(Environment environment)
+    public static void BuildIndex(Environment environment)
     {
         using var txn = environment.LightningEnvironment.BeginTransaction();
 
@@ -100,16 +99,6 @@ public static class Searcher
                     if (environment.Model.FieldsById.TryGetValue(fldId, out var fld) && fld.IsIndexed)
                     {
                         InsertIndex(fld.DataType, objId, fldId, dataValue, txn, environment);
-                    }
-                }
-                else if (value.AsSpan()[0] == (byte)ValueTyp.Aso)
-                {
-                    var objId = MemoryMarshal.Read<Guid>(key.AsSpan().Slice(0));
-                    var fldId = MemoryMarshal.Read<Guid>(key.AsSpan().Slice(16));
-                    var otherObjId = key.AsSpan().Slice(32, 16);
-                    if (environment.Model.AsoFieldsById.TryGetValue(fldId, out var asoFld) && asoFld.IsIndexed)
-                    {
-                        InsertNonStringIndex<Guid>(CustomIndexComparer.Comparison.Assoc, fldId, objId, otherObjId, txn, environment.NonStringSearchIndex);
                     }
                 }
                 else if (value.AsSpan()[0] == (byte)ValueTyp.Obj)
@@ -208,21 +197,6 @@ public static class Searcher
                         }
                     }
                 }
-                else if (key.AsSpan().Length == 64) //aso
-                {
-                    var fldId = MemoryMarshal.Read<Guid>(key.AsSpan(16));
-                    var val = key.AsSpan(32, 16); //the other object
-
-                    if (environment.Model.AsoFieldsById.TryGetValue(fldId, out var asoFld) && asoFld.IsIndexed)
-                    {
-                        RemoveNonStringIndexValue<Guid>(val, CustomIndexComparer.Comparison.Assoc, fldId, objId, txn, environment.NonStringSearchIndex);
-
-                        if (value[0] == (byte)ValueFlag.AddModify)
-                        {
-                            InsertNonStringIndex<Guid>(CustomIndexComparer.Comparison.Assoc, fldId, objId, val, txn, environment.NonStringSearchIndex);
-                        }
-                    }
-                }
             } while (changeCursor.Next().resultCode == ResultCode.Success);
         }
     }
@@ -237,39 +211,26 @@ public static class Searcher
         {
             case SearchCriterion.AssocCriterion.AssocCriterionType.MatchGuid:
 
-                if (!fld.IsIndexed)
+                Span<byte> key = stackalloc byte[2 * 16];
+                MemoryMarshal.Write<Guid>(key, criterion.ObjId);
+                MemoryMarshal.Write<Guid>(key.Slice(16), fld.OtherReferenceFielGuid);
+
+                var set = new List<Guid>();
+
+                if (cursor.SetRange(key) == MDBResultCode.Success)
                 {
-                    var objs = ExecuteTypeSearch(env, transaction, fld.OwningEntity.Id);
-
-                    foreach (var guid in objs)
+                    do
                     {
-                        
-                    }
+                        var (_, k, _) = cursor.GetCurrent();
 
-                    return [];
+                        if (!key.SequenceEqual(k.AsSpan().Slice(0, 2 * 16)))
+                            break;
+
+                        set.Add(MemoryMarshal.Read<Guid>(k.AsSpan().Slice(2 * 16, 16)));
+                    } while (cursor.Next().resultCode == MDBResultCode.Success);
                 }
-                else
-                {
-                    Span<byte> key = stackalloc byte[GetNonStringKeySize<Guid>()];
-                    ConstructNonStringIndexKey(CustomIndexComparer.Comparison.Assoc, criterion.FieldId, criterion.ObjId, key);
 
-                    var set = new List<Guid>();
-
-                    if (cursor.SetRange(key) == MDBResultCode.Success)
-                    {
-                        do
-                        {
-                            var (_, k, value) = cursor.GetCurrent();
-
-                            if (!key.SequenceEqual(k.AsSpan()))
-                                break;
-
-                            set.Add(MemoryMarshal.Read<Guid>(value.AsSpan()));
-                        } while (cursor.Next().resultCode == MDBResultCode.Success);
-                    }
-
-                    return set.ToArray();
-                }
+                return set.ToArray();
             case SearchCriterion.AssocCriterion.AssocCriterionType.Null:
                 //we have decided that for now we won't index these two cases (null and notnull) as it would be quite expensive,
                 //and it is not clear if it is worth it.

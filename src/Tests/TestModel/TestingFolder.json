@@ -41,8 +41,7 @@
         "en": "Subfolders"
       },
       "refType": "Multiple",
-      "otherReferenceFielGuid": "83A0ADA7-BA53-4877-8262-BD47520EEAC7",
-      "isIndexed": true
+      "otherReferenceFielGuid": "83A0ADA7-BA53-4877-8262-BD47520EEAC7"
     },
     {
       "id": "83A0ADA7-BA53-4877-8262-BD47520EEAC7",
@@ -51,8 +50,7 @@
         "en": "Parent"
       },
       "refType": "SingleOptional",
-      "otherReferenceFielGuid": "B40BD476-D9A3-4554-A2F6-4F7760C0FFE4",
-      "isIndexed": true
+      "otherReferenceFielGuid": "B40BD476-D9A3-4554-A2F6-4F7760C0FFE4"
     }
   ]
 }
