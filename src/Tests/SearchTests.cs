@@ -154,7 +154,7 @@ public class SearchTests
     public void DateTime_Search(bool indexed)
     {
         var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        testModel.FieldsById[TestingFolder.Fields.Name].IsIndexed = indexed;
+        testModel.FieldsById[TestingFolder.Fields.TestDateField].IsIndexed = indexed;
 
         var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
 

@@ -125,10 +125,10 @@ public static class Searcher
                 ExecuteAssocSearch(dbSession, assocCriterion, addResult);
                 break;
             case DateTimeCriterion dateTimeCriterion:
-                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.SignedLong, dateTimeCriterion.FieldId, dateTimeCriterion.From, dateTimeCriterion.To);
+                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.DateTime, dateTimeCriterion.FieldId, dateTimeCriterion.From, dateTimeCriterion.To);
                 break;
             case DecimalCriterion decimalCriterion:
-                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.SignedLong, decimalCriterion.FieldId, decimalCriterion.From, decimalCriterion.To);
+                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.Decimal, decimalCriterion.FieldId, decimalCriterion.From, decimalCriterion.To);
                 break;
             case LongCriterion longCriterion:
                 ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.SignedLong, longCriterion.FieldId, longCriterion.From, longCriterion.To);
@@ -328,14 +328,14 @@ public static class Searcher
             case AssocCriterion.AssocCriterionType.Null:
                 //we have decided that for now we won't index these two cases (null and notnull) as it would be quite expensive,
                 //and it is not clear if it is worth it.
+                throw new NotImplementedException();
                 break;
             case AssocCriterion.AssocCriterionType.NotNull:
+                throw new NotImplementedException();
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
-
-        throw new NotImplementedException();
     }
 
     private static void ExecuteNonStringSearch<T>(Environment environment, LightningTransaction transaction, Func<Guid, bool> addResult, CustomIndexComparer.Comparison comparison, Guid fieldId, T from, T to) where T : unmanaged, IComparable<T>
@@ -375,7 +375,6 @@ public static class Searcher
 
         Span<byte> maxKey = stackalloc byte[GetNonStringKeySize<T>()];
         ConstructNonStringIndexKey(comparison, fieldId, to, maxKey);
-
 
         if (cursor.SetRange(minKey) == MDBResultCode.Success)
         {
