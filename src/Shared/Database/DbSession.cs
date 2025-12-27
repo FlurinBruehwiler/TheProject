@@ -5,6 +5,15 @@ using System.Runtime.InteropServices;
 
 namespace Shared.Database;
 
+//todo the following things need to be implemented
+// [ ] implement updated/created at/by
+// [ ] implement history
+// [ ] think about extensibility / plugins, do we need some kind of scoping
+// [ ] do we want some kind of validation of the db, that checks if all constraints are met
+// [ ] implement inheritance / unions
+// [ ] implement readonly transactions
+// [ ] improve kvstore to work with less allocations
+
 
 //todo do we want/need locks in here to ensure that there aren't multiple threads at the same time interacting with the transaction
 
@@ -20,7 +29,7 @@ public sealed class DbSession : IDisposable
      * The objs are stored as follows:
      *
      * Keys:                                   Values: TODO, document how the values are stored
-     * OBJ: ObjId: [F]TypId
+     * OBJ: ObjId:                             [F]TypId
      * ASO: ObjIdA, FldIdA, ObjIdB, FldIdB
      * ASO: ObjIdB, FldIdB, ObjIdA, FldIdA
      * VAL: ObjId, FldId
@@ -132,7 +141,7 @@ public sealed class DbSession : IDisposable
 
         if (result != ResultCode.Success)
         {
-            Console.WriteLine(result);
+            Logging.Log(LogFlags.Error, result.ToString());
             Debug.Assert(false);
         }
 

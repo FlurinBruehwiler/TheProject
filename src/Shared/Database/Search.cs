@@ -34,106 +34,25 @@ public static class Searcher
 {
     public static IEnumerable<T> Search<T>(DbSession dbSession, ISearchCriterion? searchQuery = null) where T : ITransactionObject, new()
     {
-        foreach (var result in Search(dbSession, new SearchQuery
-                 {
-                     TypId = T.TypId,
-                     SearchCriterion = searchQuery
-                 }))
-        {
-            yield return new T
-            {
-                ObjId = result,
-                DbSession = dbSession
-            };
-        }
-    }
-
-    public static IEnumerable<Guid> Search(DbSession dbSession, SearchQuery searchQuery)
-    {
         var result = new List<Guid>();
 
-        SearchInternal(dbSession, searchQuery, x =>
+        SearchInternal(dbSession, new SearchQuery
+        {
+            TypId = T.TypId,
+            SearchCriterion = searchQuery
+        }, x =>
         {
             result.Add(x);
             return true;
         });
 
-        return result;
-    }
-
-    private static void SearchInternal(DbSession dbSession, ISearchCriterion criterion, Func<Guid, bool> addResult)
-    {
-        switch (criterion)
+        foreach (var x in result)
         {
-            case IdCriterion idCriterion:
-                if (dbSession.GetTypId(idCriterion.Guid) != Guid.Empty)
-                {
-                    addResult(idCriterion.Guid);
-                }
-                break;
-            case SearchQuery searchQuery:
-                if (searchQuery.SearchCriterion == null)
-                {
-                    ExecuteTypeSearch(dbSession.Environment, dbSession.Store.ReadTransaction, searchQuery.TypId, addResult);
-                }
-                else
-                {
-                    SearchInternal(dbSession, searchQuery.SearchCriterion, addResult);
-                }
-
-                break;
-            case OrCriterion orCriterion:
-                foreach (var crit in orCriterion.OrCombinations)
-                {
-                    SearchInternal(dbSession, crit, addResult);
-                }
-
-                break;
-            case AndCriterion andCriterion:
-                HashSet<Guid> lastRound = [];
-                HashSet<Guid> thisRound = [];
-
-                int i = 0;
-
-                foreach (var crit in andCriterion.AndCombinations)
-                {
-                    SearchInternal(dbSession, crit, (guid) =>
-                    {
-                        if (i == 0 || lastRound.Contains(guid)) //todo check if this works with the closure and such
-                        {
-                            thisRound.Add(guid);
-                        }
-
-                        return true;
-                    });
-
-                    thisRound.Clear();
-
-                    i++;
-                    (lastRound, thisRound) = (thisRound, lastRound);
-                }
-
-                foreach (var guid in lastRound)
-                {
-                    addResult(guid);
-                }
-
-                break;
-            case AssocCriterion assocCriterion:
-                ExecuteAssocSearch(dbSession, assocCriterion, addResult);
-                break;
-            case DateTimeCriterion dateTimeCriterion:
-                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.DateTime, dateTimeCriterion.FieldId, dateTimeCriterion.From, dateTimeCriterion.To);
-                break;
-            case DecimalCriterion decimalCriterion:
-                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.Decimal, decimalCriterion.FieldId, decimalCriterion.From, decimalCriterion.To);
-                break;
-            case LongCriterion longCriterion:
-                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.SignedLong, longCriterion.FieldId, longCriterion.From, longCriterion.To);
-                break;
-            case StringCriterion stringCriterion:
-                ExecuteStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, stringCriterion, addResult);
-                break;
+            yield return new T
+            {
+                ObjId = x,
+                DbSession = dbSession
+            };
         }
     }
 
@@ -259,6 +178,236 @@ public static class Searcher
         }
     }
 
+    private static bool MatchCriterion(DbSession dbSession, ISearchCriterion criterion, Guid obj)
+    {
+        switch (criterion)
+        {
+            case AssocCriterion assocCriterion:
+                switch (assocCriterion.Type)
+                {
+                    case AssocCriterion.AssocCriterionType.Subquery:
+                        if (assocCriterion.SearchCriterion != null)
+                        {
+                            return MatchCriterion(dbSession, assocCriterion.SearchCriterion, obj);
+                        }
+
+                        Logging.Log(LogFlags.Error, "Subquery needs a searchCriterion");
+                        break;
+                    case AssocCriterion.AssocCriterionType.Null:
+                        //todo
+                        break;
+                    case AssocCriterion.AssocCriterionType.NotNull:
+                        //todo
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                return false;
+            case DateTimeCriterion dateTimeCriterion:
+                return MatchNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, obj, dateTimeCriterion.FieldId, dateTimeCriterion.From, dateTimeCriterion.To);
+            case DecimalCriterion decimalCriterion:
+                return MatchNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, obj, decimalCriterion.FieldId, decimalCriterion.From, decimalCriterion.To);
+            case IdCriterion idCriterion:
+                return obj == idCriterion.Guid;
+            case LongCriterion longCriterion:
+                return MatchNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, obj, longCriterion.FieldId, longCriterion.From, longCriterion.To);
+            case MultiCriterion { Type: MultiCriterion.MultiType.OR } multiCriterion:
+                foreach (var crit in multiCriterion.Criterions)
+                {
+                    if (MatchCriterion(dbSession, crit, obj))
+                        return true;
+                }
+
+                return false;
+            case MultiCriterion { Type: MultiCriterion.MultiType.XOR } multiCriterion:
+                int matches = 0;
+                foreach (var crit in multiCriterion.Criterions)
+                {
+                    if (MatchCriterion(dbSession, crit, obj))
+                        matches++;
+                }
+
+                return matches == 1;
+            case MultiCriterion { Type: MultiCriterion.MultiType.AND } multiCriterion:
+                foreach (var crit in multiCriterion.Criterions)
+                {
+                    if (!MatchCriterion(dbSession, crit, obj))
+                        return false;
+                }
+
+                return true;
+            case SearchQuery searchQuery:
+                if (searchQuery.SearchCriterion == null)
+                    return dbSession.GetTypId(obj) == searchQuery.TypId;
+
+                if (dbSession.GetTypId(obj) != searchQuery.TypId)
+                    return false;
+                return MatchCriterion(dbSession, searchQuery.SearchCriterion, obj);
+            case StringCriterion stringCriterion:
+                return MatchStringCriterion(dbSession.Environment, dbSession.Store.ReadTransaction, obj, stringCriterion);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(criterion));
+        }
+    }
+
+    [SuppressMessage("ReSharper", "AccessToModifiedClosure")]
+    private static void SearchInternal(DbSession dbSession, ISearchCriterion criterion, Func<Guid, bool> addResult)
+    {
+        switch (criterion)
+        {
+            case IdCriterion idCriterion:
+                if (dbSession.GetTypId(idCriterion.Guid) != Guid.Empty)
+                {
+                    addResult(idCriterion.Guid);
+                }
+                break;
+            case SearchQuery searchQuery:
+                if (searchQuery.SearchCriterion == null)
+                {
+                    ExecuteTypeSearch(dbSession.Environment, dbSession.Store.ReadTransaction, searchQuery.TypId, addResult);
+                }
+                else
+                {
+                    SearchInternal(dbSession, searchQuery.SearchCriterion, addResult);
+                }
+
+                break;
+            case MultiCriterion { Type: MultiCriterion.MultiType.OR } multiCriterion:
+
+                HashSet<Guid> seen = [];
+
+                foreach (var crit in multiCriterion.Criterions)
+                {
+                    SearchInternal(dbSession, crit, guid =>
+                    {
+                        if (seen.Add(guid))
+                        {
+                            addResult(guid);
+                        }
+
+                        return true;
+                    });
+                }
+
+                break;
+            case MultiCriterion { Type: MultiCriterion.MultiType.AND } multiCriterion:
+
+                HashSet<Guid>? workingSet = null;
+
+                foreach (var crit in multiCriterion.Criterions.OrderBy(x => EstimateCriterionCost(x, dbSession.Environment.Model)))
+                {
+                    if (workingSet == null)
+                    {
+                        workingSet = [];
+                        SearchInternal(dbSession, crit, g =>
+                        {
+                            workingSet.Add(g);
+                            return true;
+                        });
+                    }
+                    else
+                    {
+                        workingSet.RemoveWhere(g => !MatchCriterion(dbSession, crit, g));
+                    }
+                }
+
+                if (workingSet != null)
+                {
+                    foreach (var guid in workingSet)
+                    {
+                        addResult(guid);
+                    }
+                }
+
+                break;
+            case MultiCriterion { Type: MultiCriterion.MultiType.XOR } multiCriterion:
+                HashSet<Guid> previous = [];
+                HashSet<Guid> current = [];
+
+                int i = 0;
+
+                foreach (var crit in multiCriterion.Criterions)
+                {
+                    SearchInternal(dbSession, crit, (guid) =>
+                    {
+                        if (i == 0 || !previous.Contains(guid))
+                        {
+                            current.Add(guid);
+                        }
+
+                        return true;
+                    });
+
+
+                    i++;
+                    (previous, current) = (current, previous);
+
+                    current.Clear();
+                }
+
+                foreach (var guid in previous)
+                {
+                    addResult(guid);
+                }
+
+                break;
+            case AssocCriterion assocCriterion:
+                ExecuteAssocSearch(dbSession, assocCriterion, addResult);
+                break;
+            case DateTimeCriterion dateTimeCriterion:
+                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.DateTime, dateTimeCriterion.FieldId, dateTimeCriterion.From, dateTimeCriterion.To);
+                break;
+            case DecimalCriterion decimalCriterion:
+                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.Decimal, decimalCriterion.FieldId, decimalCriterion.From, decimalCriterion.To);
+                break;
+            case LongCriterion longCriterion:
+                ExecuteNonStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, addResult, CustomIndexComparer.Comparison.SignedLong, longCriterion.FieldId, longCriterion.From, longCriterion.To);
+                break;
+            case StringCriterion stringCriterion:
+                ExecuteStringSearch(dbSession.Environment, dbSession.Store.ReadTransaction, stringCriterion, addResult);
+                break;
+        }
+    }
+
+    private static int EstimateCriterionCost(ISearchCriterion searchCriterion, ProjectModel model)
+    {
+        switch (searchCriterion)
+        {
+            case AssocCriterion assocCriterion:
+                if (assocCriterion.SearchCriterion != null)
+                    return 50 + EstimateCriterionCost(assocCriterion.SearchCriterion, model);
+
+                return 50;
+            case DateTimeCriterion dateTimeCriterion:
+                if (model.FieldsById[dateTimeCriterion.FieldId].IsIndexed)
+                    return 0;
+                return 1000;
+            case DecimalCriterion decimalCriterion:
+                if (model.FieldsById[decimalCriterion.FieldId].IsIndexed)
+                    return 0;
+                return 1000;
+            case IdCriterion:
+                return 0;
+            case LongCriterion longCriterion:
+                if (model.FieldsById[longCriterion.FieldId].IsIndexed)
+                    return 0;
+                return 1000;
+            case MultiCriterion:
+                return 1000;
+            case SearchQuery searchQuery:
+                if (searchQuery.SearchCriterion == null)
+                    return 50;
+                return EstimateCriterionCost(searchQuery.SearchCriterion, model);
+            case StringCriterion stringCriterion:
+                if (model.FieldsById[stringCriterion.FieldId].IsIndexed)
+                    return 0;
+                return 1000;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(searchCriterion));
+        }
+    }
+
     [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
     private static void ExecuteAssocSearch(DbSession dbSession, AssocCriterion criterion, Func<Guid, bool> addResult)
     {
@@ -274,7 +423,7 @@ public static class Searcher
             case AssocCriterion.AssocCriterionType.Subquery:
                 if (criterion.SearchCriterion != null)
                 {
-                    //todo we need to validate of this criterion is even valid, i.e. the object actually has the fields
+                    //todo do we want to validate if this criterion is even valid, i.e. the object actually has the fields
                     SearchInternal(dbSession, criterion.SearchCriterion, objId =>
                     {
                         Span<byte> key = stackalloc byte[2 * 16];
@@ -299,27 +448,7 @@ public static class Searcher
                 }
                 else
                 {
-                    Console.WriteLine("A SearchCriterion needs to be specified if the search type is Subquery");
-                }
-
-                break;
-            case AssocCriterion.AssocCriterionType.MatchGuid:
-
-                Span<byte> key = stackalloc byte[2 * 16];
-                MemoryMarshal.Write(key, criterion.ObjId);
-                MemoryMarshal.Write(key.Slice(16), fld.OtherReferenceFielGuid);
-
-                if (cursor.SetRange(key) == MDBResultCode.Success)
-                {
-                    do
-                    {
-                        var (_, k, _) = cursor.GetCurrent();
-
-                        if (k.AsSpan().Length != 64 || !key.SequenceEqual(k.AsSpan().Slice(0, 2 * 16)))
-                            break;
-
-                        addResult(MemoryMarshal.Read<Guid>(k.AsSpan().Slice(2 * 16, 16)));
-                    } while (cursor.Next().resultCode == MDBResultCode.Success);
+                    Logging.Log(LogFlags.Error, "A SearchCriterion needs to be specified if the search type is Subquery");
                 }
 
                 break;
@@ -327,13 +456,29 @@ public static class Searcher
                 //we have decided that for now we won't index these two cases (null and notnull) as it would be quite expensive,
                 //and it is not clear if it is worth it.
                 throw new NotImplementedException();
-                break;
             case AssocCriterion.AssocCriterionType.NotNull:
                 throw new NotImplementedException();
-                break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
+    }
+
+    private static bool MatchNonStringSearch<T>(Environment environment, LightningTransaction transaction, Guid objId, Guid fieldId, T from, T to) where T : unmanaged, IComparable<T>
+    {
+        var val = GetFldValue<byte>(environment, transaction, objId, fieldId);
+
+        if (val.Length == 0)
+            return false;
+
+        if (CustomIndexComparer.CompareGeneric<T>(val, from.AsSpan()) >= 0)
+        {
+            if (CustomIndexComparer.CompareGeneric<T>(val, to.AsSpan()) <= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void ExecuteNonStringSearch<T>(Environment environment, LightningTransaction transaction, Func<Guid, bool> addResult, CustomIndexComparer.Comparison comparison, Guid fieldId, T from, T to) where T : unmanaged, IComparable<T>
@@ -342,7 +487,7 @@ public static class Searcher
 
         if (fld == null)
         {
-            Console.WriteLine($"There isn't a Field with the ID {fieldId}"); //todo proper logging system
+            Logging.Log(LogFlags.Error, $"There isn't a Field with the ID {fieldId}");
             return;
         }
 
@@ -350,14 +495,9 @@ public static class Searcher
         {
             ExecuteTypeSearch(environment, transaction, fld.OwningEntity.Id, (objId) =>
             {
-                var val = GetFldValue<byte>(environment, transaction, objId, fieldId);
-
-                if (CustomIndexComparer.CompareGeneric<T>(val, from.AsSpan()) >= 0)
+                if (MatchNonStringSearch(environment, transaction, objId, fieldId, from, to))
                 {
-                    if (CustomIndexComparer.CompareGeneric<T>(val, to.AsSpan()) <= 0)
-                    {
-                        addResult(objId);
-                    }
+                    addResult(objId);
                 }
 
                 return true;
@@ -424,6 +564,42 @@ public static class Searcher
         return ReadOnlySpan<T>.Empty;
     }
 
+    private static bool MatchStringCriterion(Environment environment, LightningTransaction transaction, Guid objId, StringCriterion criterion)
+    {
+        switch (criterion.Type)
+        {
+            case StringCriterion.MatchType.Substring:
+            {
+                var val = GetFldValue<char>(environment, transaction, objId, criterion.FieldId);
+
+                return val.Contains(criterion.Value.AsSpan(), StringComparison.OrdinalIgnoreCase);
+            }
+            case StringCriterion.MatchType.Exact:
+            {
+                var val = GetFldValue<char>(environment, transaction, objId, criterion.FieldId);
+
+                return val.Equals(criterion.Value.AsSpan(), StringComparison.OrdinalIgnoreCase);
+            }
+            case StringCriterion.MatchType.Prefix:
+            {
+                var val = GetFldValue<char>(environment, transaction, objId, criterion.FieldId);
+
+                return val.StartsWith(criterion.Value.AsSpan(), StringComparison.OrdinalIgnoreCase);
+            }
+            case StringCriterion.MatchType.Postfix:
+            {
+                var val = GetFldValue<char>(environment, transaction, objId, criterion.FieldId);
+
+                return val.EndsWith(criterion.Value.AsSpan(), StringComparison.OrdinalIgnoreCase);
+            }
+            case StringCriterion.MatchType.Fuzzy:
+                //todo, implement ngram fuzzy search...
+                return false;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
     private static void ExecuteStringSearch(Environment environment, LightningTransaction transaction, StringCriterion criterion, Func<Guid, bool> addResult)
     {
         var fld = environment.Model.FieldsById[criterion.FieldId];
@@ -432,45 +608,9 @@ public static class Searcher
         {
             ExecuteTypeSearch(environment, transaction, fld.OwningEntity.Id, (objId) =>
             {
-                switch (criterion.Type)
+                if (MatchStringCriterion(environment, transaction, objId, criterion))
                 {
-                    case StringCriterion.MatchType.Substring:
-                    {
-                        var val = GetFldValue<char>(environment, transaction, objId, criterion.FieldId);
-
-                        if (val.Contains(criterion.Value.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                            addResult(objId);
-                        break;
-                    }
-                    case StringCriterion.MatchType.Exact:
-                    {
-                        var val = GetFldValue<char>(environment, transaction, objId, criterion.FieldId);
-
-                        if (val.Equals(criterion.Value.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                            addResult(objId);
-                        break;
-                    }
-                    case StringCriterion.MatchType.Prefix:
-                    {
-                        var val = GetFldValue<char>(environment, transaction, objId, criterion.FieldId);
-
-                        if (val.StartsWith(criterion.Value.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                            addResult(objId);
-                        break;
-                    }
-                    case StringCriterion.MatchType.Postfix:
-                    {
-                        var val = GetFldValue<char>(environment, transaction, objId, criterion.FieldId);
-
-                        if (val.EndsWith(criterion.Value.AsSpan(), StringComparison.OrdinalIgnoreCase))
-                            addResult(objId);
-                        break;
-                    }
-                    case StringCriterion.MatchType.Fuzzy:
-                        //todo, implement ngram fuzzy search...
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    addResult(objId);
                 }
 
                 return true;

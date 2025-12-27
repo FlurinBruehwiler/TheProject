@@ -57,55 +57,17 @@ try
         var result = Searcher.Search<Folder>(t, new AssocCriterion
         {
             FieldId = Folder.Fields.Subfolders,
-            ObjId = childObjId,
-            Type = AssocCriterion.AssocCriterionType.MatchGuid
+            Type = AssocCriterion.AssocCriterionType.Subquery,
+            SearchCriterion = new IdCriterion
+            {
+                Guid = childObjId
+            }
         });
-
-        // var result = Searcher.Search<Folder>(t, new SearchCriterion
-        // {
-        //     Type = SearchCriterion.CriterionType.DateTime,
-        //     DateTime = new SearchCriterion.DateTimeCriterion
-        //     {
-        //         FieldId = Folder.Fields.TestDateField,
-        //         From = new DateTime(2003, 1, 1),
-        //         To = new DateTime(2005, 1, 1)
-        //     }
-        // }, new SearchCriterion
-        // {
-        //     Type = SearchCriterion.CriterionType.String,
-        //     String = new SearchCriterion.StringCriterion
-        //     {
-        //         FieldId = Folder.Fields.Name,
-        //         Value = "flurin",
-        //         Type = SearchCriterion.StringCriterion.MatchType.Substring
-        //     }
-        // });
 
         foreach (Folder folder in result)
         {
             Console.WriteLine(folder.Name);
         }
-
-        // foreach (var matchType in Enum.GetValues<SearchCriterion.StringCriterion.MatchType>())
-        // {
-        //     Console.WriteLine(matchType + ":");
-        //
-        //     foreach (var folder in Searcher.Search<Folder>(t, new SearchCriterion
-        //              {
-        //                  Type = SearchCriterion.CriterionType.String,
-        //                  String = new SearchCriterion.StringCriterion
-        //                  {
-        //                      FieldId = Folder.Fields.Name,
-        //                      Value = "FLurIN",
-        //                      Type = matchType
-        //                  }
-        //              }))
-        //     {
-        //         Console.WriteLine(folder.Name);
-        //     }
-        //
-        //     Console.WriteLine();
-        // }
     }
 }
 catch (Exception e)

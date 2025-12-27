@@ -8,14 +8,17 @@ public class SearchQuery : ISearchCriterion
     public ISearchCriterion? SearchCriterion;
 }
 
-public class OrCriterion : ISearchCriterion
+public class MultiCriterion : ISearchCriterion
 {
-    public List<ISearchCriterion> OrCombinations = [];
-}
+    public List<ISearchCriterion> Criterions = [];
+    public MultiType Type;
 
-public class AndCriterion : ISearchCriterion
-{
-    public List<ISearchCriterion> AndCombinations = [];
+    public enum MultiType
+    {
+        AND,
+        OR,
+        XOR,
+    }
 }
 
 public class IdCriterion : ISearchCriterion
@@ -26,7 +29,6 @@ public class IdCriterion : ISearchCriterion
 public class AssocCriterion : ISearchCriterion
 {
     public Guid FieldId;
-    public Guid ObjId;
 
     public ISearchCriterion? SearchCriterion;
 
@@ -34,10 +36,9 @@ public class AssocCriterion : ISearchCriterion
 
     public enum AssocCriterionType
     {
-        MatchGuid = 0, //Default
+        Subquery = 0, //default
         Null,
         NotNull,
-        Subquery,
     }
 }
 

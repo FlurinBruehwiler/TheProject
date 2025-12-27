@@ -134,8 +134,11 @@ public class SearchTests
         var result = Searcher.Search<TestingFolder>(tsx, new AssocCriterion
         {
             FieldId = TestingFolder.Fields.Parent,
-            ObjId = folderA.ObjId,
-            Type = AssocCriterion.AssocCriterionType.MatchGuid
+            Type = AssocCriterion.AssocCriterionType.Subquery,
+            SearchCriterion = new IdCriterion
+            {
+                Guid = folderA.ObjId
+            }
         });
 
         AssertEqual([folderB], result);
@@ -143,8 +146,11 @@ public class SearchTests
         var result2 = Searcher.Search<TestingFolder>(tsx, new AssocCriterion
         {
             FieldId = TestingFolder.Fields.Subfolders,
-            ObjId = folderB.ObjId,
-            Type = AssocCriterion.AssocCriterionType.MatchGuid
+            Type = AssocCriterion.AssocCriterionType.Subquery,
+            SearchCriterion = new IdCriterion
+            {
+                Guid = folderB.ObjId
+            }
         });
 
         AssertEqual([folderA], result2);
@@ -389,9 +395,10 @@ public class SearchTests
 
         tsx.Commit();
 
-        var result = Searcher.Search<TestingFolder>(tsx, new AndCriterion()
+        var result = Searcher.Search<TestingFolder>(tsx, new MultiCriterion()
         {
-            AndCombinations = [
+            Type = MultiCriterion.MultiType.AND,
+            Criterions = [
                 new StringCriterion
                 {
                     FieldId = TestingFolder.Fields.Name,
@@ -408,6 +415,57 @@ public class SearchTests
         });
 
         AssertEqual([folderA], result);
+    }
+
+    [Fact]
+    public void LogicalOr_Search()
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folderA = new TestingFolder(tsx)
+        {
+            Name = "Foo",
+            TestDateField = new DateTime(2004, 09, 13)
+        };
+
+        var folderB = new TestingFolder(tsx)
+        {
+            TestIntegerField = 42,
+            TestDecimalField = 300.45M
+        };
+
+        var folderC = new TestingFolder(tsx)
+        {
+            Name = "Bar",
+            TestDateField = new DateTime(2004, 09, 13),
+            TestDecimalField = 20.3M
+        };
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new MultiCriterion()
+        {
+            Type = MultiCriterion.MultiType.OR,
+            Criterions = [
+                new StringCriterion
+                {
+                    FieldId = TestingFolder.Fields.Name,
+                    Type = StringCriterion.MatchType.Exact,
+                    Value = "Foo"
+                },
+                new DateTimeCriterion
+                {
+                    FieldId = TestingFolder.Fields.TestDateField,
+                    From = new DateTime(2004, 09, 13),
+                    To = new DateTime(2004, 09, 13).AddDays(1).AddTicks(-1)
+                }
+            ]
+        });
+
+        AssertEqual([folderA, folderC], result);
     }
 
     private void AssertEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual) where T : ITransactionObject

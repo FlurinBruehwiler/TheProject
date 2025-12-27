@@ -41,7 +41,7 @@ public sealed class TransactionalKvStore : IDisposable
                 }
                 else
                 {
-                    Console.WriteLine("Invalid value!!");
+                    Logging.Log(LogFlags.Error, "Invalid value!!");
                 }
 
             } while (cursor.Next().resultCode == ResultCode.Success);

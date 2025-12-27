@@ -6,28 +6,16 @@ class Program
 {
     static void Main()
     {
-        var overlay = new SortedDictionary<byte[], string>(ByteArrayComparer.Instance);
-    }
+        int i = 1;
+        int y = 2;
 
-
-}
-
-class ByteArrayComparer : IComparer<byte[]>
-{
-    public static ByteArrayComparer Instance { get; } = new();
-
-    public int Compare(byte[]? a, byte[]? b)
-    {
-        if (ReferenceEquals(a, b)) return 0;
-        if (a == null) return -1;
-        if (b == null) return 1;
-
-        int len = Math.Min(a.Length, b.Length);
-        for (int i = 0; i < len; i++)
+        var x = () =>
         {
-            int diff = a[i].CompareTo(b[i]);
-            if (diff != 0) return diff;
-        }
-        return a.Length.CompareTo(b.Length);
+            Console.WriteLine(i);
+        };
+
+        i++;
+
+        x();
     }
 }
