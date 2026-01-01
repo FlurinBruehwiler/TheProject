@@ -204,11 +204,41 @@ public static class Searcher
                         Logging.Log(LogFlags.Error, "Subquery needs a searchCriterion");
                         break;
                     case AssocCriterion.AssocCriterionType.Null:
-                        //todo
-                        break;
+                    {
+                        using var cursor = dbSession.Store.ReadTransaction.CreateCursor(dbSession.Environment.ObjectDb);
+
+                        Span<byte> prefix = stackalloc byte[2 * 16];
+                        MemoryMarshal.Write(prefix, obj);
+                        MemoryMarshal.Write(prefix.Slice(16), assocCriterion.FieldId);
+
+                        if (cursor.SetRange(prefix) == MDBResultCode.Success)
+                        {
+                            var (_, key, _) = cursor.GetCurrent();
+                            var keySpan = key.AsSpan();
+                            if (keySpan.Length == 4 * 16 && prefix.SequenceEqual(keySpan.Slice(0, 2 * 16)))
+                                return false;
+                        }
+
+                        return true;
+                    }
                     case AssocCriterion.AssocCriterionType.NotNull:
-                        //todo
-                        break;
+                    {
+                        using var cursor = dbSession.Store.ReadTransaction.CreateCursor(dbSession.Environment.ObjectDb);
+
+                        Span<byte> prefix = stackalloc byte[2 * 16];
+                        MemoryMarshal.Write(prefix, obj);
+                        MemoryMarshal.Write(prefix.Slice(16), assocCriterion.FieldId);
+
+                        if (cursor.SetRange(prefix) == MDBResultCode.Success)
+                        {
+                            var (_, key, _) = cursor.GetCurrent();
+                            var keySpan = key.AsSpan();
+                            if (keySpan.Length == 4 * 16 && prefix.SequenceEqual(keySpan.Slice(0, 2 * 16)))
+                                return true;
+                        }
+
+                        return false;
+                    }
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -474,11 +504,53 @@ public static class Searcher
 
                 break;
             case AssocCriterion.AssocCriterionType.Null:
-                //we have decided that for now we won't index these two cases (null and notnull) as it would be quite expensive,
-                //and it is not clear if it is worth it.
-                throw new NotImplementedException();
+            {
+                // Not indexed for now.
+                // Returns all objects of the owning entity where the association has no entries.
+                return ExecuteTypeSearch(env, transaction, fld.OwningEntity.Id, objId =>
+                {
+                    Span<byte> key = stackalloc byte[2 * 16];
+                    MemoryMarshal.Write(key, objId);
+                    MemoryMarshal.Write(key.Slice(16), criterion.FieldId);
+
+                    bool hasAssoc = false;
+                    if (cursor.SetRange(key) == MDBResultCode.Success)
+                    {
+                        var (_, k, _) = cursor.GetCurrent();
+                        if (k.AsSpan().Length == 4 * 16 && key.SequenceEqual(k.AsSpan().Slice(0, 2 * 16)))
+                            hasAssoc = true;
+                    }
+
+                    if (!hasAssoc)
+                        return addResult(objId);
+
+                    return true;
+                });
+            }
             case AssocCriterion.AssocCriterionType.NotNull:
-                throw new NotImplementedException();
+            {
+                // Not indexed for now.
+                // Returns all objects of the owning entity where the association has at least one entry.
+                return ExecuteTypeSearch(env, transaction, fld.OwningEntity.Id, objId =>
+                {
+                    Span<byte> key = stackalloc byte[2 * 16];
+                    MemoryMarshal.Write(key, objId);
+                    MemoryMarshal.Write(key.Slice(16), criterion.FieldId);
+
+                    bool hasAssoc = false;
+                    if (cursor.SetRange(key) == MDBResultCode.Success)
+                    {
+                        var (_, k, _) = cursor.GetCurrent();
+                        if (k.AsSpan().Length == 4 * 16 && key.SequenceEqual(k.AsSpan().Slice(0, 2 * 16)))
+                            hasAssoc = true;
+                    }
+
+                    if (hasAssoc)
+                        return addResult(objId);
+
+                    return true;
+                });
+            }
             default:
                 throw new ArgumentOutOfRangeException();
         }

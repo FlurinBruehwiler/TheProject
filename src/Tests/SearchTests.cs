@@ -1,4 +1,4 @@
-﻿using Shared;
+using Shared;
 using Shared.Database;
 using TestModel.Generated;
 using Environment = Shared.Environment;
@@ -154,6 +154,118 @@ public class SearchTests
         });
 
         AssertEqual([folderA], result2);
+    }
+
+    [Fact]
+    public void Assoc_Parent_Null_Search()
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folderA = new TestingFolder(tsx);
+
+        _ = new TestingFolder(tsx)
+        {
+            Parent = folderA
+        };
+
+        var folderC = new TestingFolder(tsx);
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new AssocCriterion
+        {
+            FieldId = TestingFolder.Fields.Parent,
+            Type = AssocCriterion.AssocCriterionType.Null,
+        });
+
+        AssertEqual([folderA, folderC], result);
+    }
+
+    [Fact]
+    public void Assoc_Parent_NotNull_Search()
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folderA = new TestingFolder(tsx);
+
+        var folderB = new TestingFolder(tsx)
+        {
+            Parent = folderA
+        };
+
+        _ = new TestingFolder(tsx);
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new AssocCriterion
+        {
+            FieldId = TestingFolder.Fields.Parent,
+            Type = AssocCriterion.AssocCriterionType.NotNull,
+        });
+
+        AssertEqual([folderB], result);
+    }
+
+    [Fact]
+    public void Assoc_Subfolders_Null_Search()
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folderA = new TestingFolder(tsx);
+
+        var folderB = new TestingFolder(tsx)
+        {
+            Parent = folderA
+        };
+
+        var folderC = new TestingFolder(tsx);
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new AssocCriterion
+        {
+            FieldId = TestingFolder.Fields.Subfolders,
+            Type = AssocCriterion.AssocCriterionType.Null,
+        });
+
+        AssertEqual([folderB, folderC], result);
+    }
+
+    [Fact]
+    public void Assoc_Subfolders_NotNull_Search()
+    {
+        var testModel = ProjectModel.CreateFromDirectory("TestModel");
+        var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+
+        using var tsx = new DbSession(env);
+
+        var folderA = new TestingFolder(tsx);
+
+        _ = new TestingFolder(tsx)
+        {
+            Parent = folderA
+        };
+
+        _ = new TestingFolder(tsx);
+
+        tsx.Commit();
+
+        var result = Searcher.Search<TestingFolder>(tsx, new AssocCriterion
+        {
+            FieldId = TestingFolder.Fields.Subfolders,
+            Type = AssocCriterion.AssocCriterionType.NotNull,
+        });
+
+        AssertEqual([folderA], result);
     }
 
     [Theory]

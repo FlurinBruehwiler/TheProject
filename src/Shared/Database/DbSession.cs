@@ -12,7 +12,7 @@ namespace Shared.Database;
 // [ ] think about extensibility / plugins, do we need some kind of scoping
 // [ ] do we want some kind of validation of the db, that checks if all constraints are met
 // [ ] implement inheritance / unions
-// [ ] implement readonly transactions
+// [x] implement readonly transactions
 // [x] improve kvstore to work with less allocations
 
 
@@ -37,7 +37,7 @@ public sealed class DbSession : IDisposable
      *
      */
 
-    public readonly TransactionalKvStore.Cursor Cursor;
+    public TransactionalKvStore.Cursor Cursor;
     public TransactionalKvStore Store;
     public Environment Environment;
     public bool IsReadOnly { get; }
@@ -70,9 +70,12 @@ public sealed class DbSession : IDisposable
 
         }
 
+        Cursor.Dispose();
         Store.Dispose();
-        //reset the store
-        Store = new TransactionalKvStore(Environment.LightningEnvironment, Environment.ObjectDb, readOnly: IsReadOnly);
+
+        // reset the store/cursor to a fresh read view
+        Store = new TransactionalKvStore(Environment.LightningEnvironment, Environment.ObjectDb);
+        Cursor = Store.CreateCursor();
     }
 
     /// <summary>
