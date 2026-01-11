@@ -37,3 +37,6 @@ TODO: fulltext search
 5. Execute all Validators
 6. If no validator reported an error, we commit to LMDB.
 7. Release lock
+
+## IDs
+Currently we use Guids everywhere for IDs, they are used for ObjIds and for Model IDs. The problem is that Guids are 16 Bytes and therefore make the DB much larger than it needs to be. We should consider switching to a new system, especially for the Model IDs. We should switch to some 8-Bit ID, something similar to https://en.wikipedia.org/wiki/Snowflake_ID.
