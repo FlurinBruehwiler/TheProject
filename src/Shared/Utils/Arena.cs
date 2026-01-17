@@ -11,7 +11,7 @@ public struct RelativePtr<T> where T : unmanaged
 
     public unsafe RelativePtr(void* @base, T* ptr)
     {
-        Offset = (byte)ptr - (byte)@base;
+        Offset = (IntPtr)((byte*)ptr - (byte*)@base);
     }
 
     public unsafe T* ToAbsolute(ArenaScope arenaScope)
