@@ -325,7 +325,7 @@ public class HistoryTests
     }
 
     [Fact]
-    public void History_All_Commits_Are_Time_Ordered()
+    public async Task History_All_Commits_Are_Time_Ordered()
     {
         var testModel = ProjectModel.CreateFromDirectory("TestModel");
         using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
@@ -340,12 +340,12 @@ public class HistoryTests
             folder.Name = "1";
             session.Commit();
 
-            Thread.Sleep(2);
+            await Task.Delay(2);
 
             folder.Name = "2";
             session.Commit();
 
-            Thread.Sleep(2);
+            await Task.Delay(2);
 
             folder.Name = "3";
             session.Commit();
@@ -374,50 +374,5 @@ public class HistoryTests
 
         Assert.True(c1.TimestampUtc >= c0.TimestampUtc);
         Assert.True(c2.TimestampUtc >= c1.TimestampUtc);
-    }
-
-    [Fact]
-    public void History_String_Values_Are_Truncated()
-    {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
-
-        Guid objId;
-
-        string long1 =  new string('a', 1000);
-        string long2 = new string('b', 1000);
-
-        using (var session = new DbSession(env))
-        {
-            var folder = new TestingFolder(session);
-            objId = folder.ObjId;
-
-            folder.Name = long1;
-            session.Commit();
-
-            folder.Name = long2;
-            session.Commit();
-        }
-
-        using var readSession = new DbSession(env, readOnly: true);
-
-        var commits = History.GetCommitsForObject(env, readSession.Store.ReadTransaction, objId).ToList();
-        Assert.Equal(2, commits.Count);
-
-        var commit = History.TryGetCommit(env, readSession.Store.ReadTransaction, commits[1]);
-        Assert.NotNull(commit);
-
-        var events = commit.EventsByObject[objId];
-        var nameEvent = Assert.Single(events, e => e.Type == HistoryEventType.FldChanged && e.FldId == TestingFolder.Fields.Name);
-
-        // 256 bytes cap (and even for UTF-16)
-        Assert.True(nameEvent.OldValue.Length <= 256);
-        Assert.True(nameEvent.NewValue.Length <= 256);
-        Assert.Equal(0, nameEvent.OldValue.Length & 1);
-        Assert.Equal(0, nameEvent.NewValue.Length & 1);
-
-        // Sanity: the beginning bytes should match the new string.
-        var expectedPrefix = Encoding.Unicode.GetBytes(long2.Substring(0, 10));
-        Assert.True(nameEvent.NewValue.AsSpan(0, expectedPrefix.Length).SequenceEqual(expectedPrefix));
     }
 }

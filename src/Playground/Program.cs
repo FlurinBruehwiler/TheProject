@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Text;
 using LightningDB;
+using Shared.Database;
 using Shared.Utils;
 
 class Program
 {
     static unsafe void Main()
     {
-        var BasePtr = (byte*)Arena.VirtualAlloc(IntPtr.Zero, 1000, Arena.AllocationType.Reserve, Arena.MemoryProtection.ReadWrite);
-        BasePtr[10] = 100;
+        var before = Guid.CreateVersion7(DateTimeOffset.UtcNow);
+        var after = Guid.CreateVersion7(DateTimeOffset.UtcNow.AddMilliseconds(1));
+
+        var res = BPlusTree.CompareLexicographic(before.AsSpan(), after.AsSpan());
+        Console.WriteLine(res);
     }
 }
