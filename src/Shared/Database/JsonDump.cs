@@ -1,8 +1,8 @@
 using System.Buffers;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-
 
 namespace Shared.Database;
 
@@ -81,6 +81,227 @@ public static class JsonDump
         }
 
         return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    public static void FromJson(string json, Environment env, DbSession dbSession)
+    {
+        if (dbSession.IsReadOnly)
+            throw new InvalidOperationException("DbSession is read-only");
+
+        using var doc = JsonDocument.Parse(json);
+
+        if (!doc.RootElement.TryGetProperty("entities", out var entities) || entities.ValueKind != JsonValueKind.Object)
+            return;
+
+        // Pass 1: ensure all objects exist, and types match.
+        foreach (var entityProp in entities.EnumerateObject())
+        {
+            if (!Guid.TryParse(entityProp.Name, out var objId))
+                continue;
+
+            var entityJson = entityProp.Value;
+            if (entityJson.ValueKind != JsonValueKind.Object)
+                continue;
+
+            if (!entityJson.TryGetProperty("$type", out var typeProp) || typeProp.ValueKind != JsonValueKind.String)
+                continue;
+
+            if (!Guid.TryParse(typeProp.GetString(), out var typId))
+                continue;
+
+            var existingTyp = dbSession.GetTypId(objId);
+            if (existingTyp == Guid.Empty)
+            {
+                CreateObjWithId(dbSession, objId, typId);
+            }
+            else if (existingTyp != typId)
+            {
+                Logging.Log(LogFlags.Error, $"FromJson: object {objId} exists with type {existingTyp}, expected {typId}; skipping.");
+            }
+        }
+
+        var entityById = env.Model.EntityDefinitions.ToDictionary(x => x.Id, x => x);
+
+        // Pass 2: set fields and associations.
+        foreach (var entityProp in entities.EnumerateObject())
+        {
+            if (!Guid.TryParse(entityProp.Name, out var objId))
+                continue;
+
+            var entityJson = entityProp.Value;
+            if (entityJson.ValueKind != JsonValueKind.Object)
+                continue;
+
+            if (!entityJson.TryGetProperty("$type", out var typeProp) || typeProp.ValueKind != JsonValueKind.String)
+                continue;
+
+            if (!Guid.TryParse(typeProp.GetString(), out var typId))
+                continue;
+
+            if (!entityById.TryGetValue(typId, out var entity))
+                continue;
+
+            // If the object exists with a different type, we skip it (already logged in pass 1).
+            if (dbSession.GetTypId(objId) != typId)
+                continue;
+
+            foreach (var field in entity.Fields)
+            {
+                if (entityJson.TryGetProperty(field.Key, out var value))
+                {
+                    SetScalarFieldFromJson(dbSession, objId, field.Id, field.DataType, value);
+                }
+                else
+                {
+                    // Match dump semantics: missing means "unset".
+                    dbSession.SetFldValue(objId, field.Id, ReadOnlySpan<byte>.Empty);
+                }
+            }
+
+            foreach (var refField in entity.ReferenceFields)
+            {
+                var fldIdA = refField.Id;
+                var fldIdB = refField.OtherReferenceFielGuid;
+
+                if (!entityJson.TryGetProperty(refField.Key, out var value) || value.ValueKind == JsonValueKind.Null)
+                {
+                    dbSession.RemoveAllAso(objId, fldIdA);
+                    continue;
+                }
+
+                // Always clear existing connections first so the DB matches the json.
+                dbSession.RemoveAllAso(objId, fldIdA);
+
+                if (refField.RefType == RefType.Multiple)
+                {
+                    if (value.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var item in value.EnumerateArray())
+                        {
+                            if (item.ValueKind != JsonValueKind.String)
+                                continue;
+
+                            if (Guid.TryParse(item.GetString(), out var otherObjId))
+                                dbSession.CreateAso(objId, fldIdA, otherObjId, fldIdB);
+                        }
+                    }
+                    else if (value.ValueKind == JsonValueKind.String)
+                    {
+                        if (Guid.TryParse(value.GetString(), out var otherObjId))
+                            dbSession.CreateAso(objId, fldIdA, otherObjId, fldIdB);
+                    }
+
+                    continue;
+                }
+
+                // SingleOptional / SingleMandatory
+                if (value.ValueKind == JsonValueKind.String && Guid.TryParse(value.GetString(), out var singleId))
+                {
+                    if (singleId != Guid.Empty)
+                        dbSession.CreateAso(objId, fldIdA, singleId, fldIdB);
+                }
+            }
+        }
+    }
+
+    private static void CreateObjWithId(DbSession dbSession, Guid objId, Guid typId)
+    {
+        var val = new ObjValue
+        {
+            TypId = typId,
+            ValueTyp = ValueTyp.Obj
+        };
+
+        var keyBuf = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref objId, 1));
+        var valueBuf = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref val, 1));
+
+        var result = dbSession.Store.Put(keyBuf, valueBuf);
+        if (result != ResultCode.Success)
+            throw new InvalidOperationException($"Failed creating object {objId} ({typId}).");
+    }
+
+    private static void SetScalarFieldFromJson(DbSession dbSession, Guid objId, Guid fldId, FieldDataType type, JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Null)
+        {
+            dbSession.SetFldValue(objId, fldId, ReadOnlySpan<byte>.Empty);
+            return;
+        }
+
+        switch (type)
+        {
+            case FieldDataType.String:
+            {
+                if (value.ValueKind != JsonValueKind.String)
+                {
+                    dbSession.SetFldValue(objId, fldId, ReadOnlySpan<byte>.Empty);
+                    return;
+                }
+
+                var s = value.GetString() ?? string.Empty;
+                var bytes = Encoding.Unicode.GetBytes(s);
+                dbSession.SetFldValue(objId, fldId, bytes);
+                return;
+            }
+            case FieldDataType.Integer:
+            {
+                if (value.ValueKind != JsonValueKind.Number)
+                {
+                    dbSession.SetFldValue(objId, fldId, ReadOnlySpan<byte>.Empty);
+                    return;
+                }
+
+                long l = value.GetInt64();
+                dbSession.SetFldValue(objId, fldId, l.AsSpan());
+                return;
+            }
+            case FieldDataType.Decimal:
+            {
+                if (value.ValueKind != JsonValueKind.Number)
+                {
+                    dbSession.SetFldValue(objId, fldId, ReadOnlySpan<byte>.Empty);
+                    return;
+                }
+
+                decimal d = value.GetDecimal();
+                dbSession.SetFldValue(objId, fldId, d.AsSpan());
+                return;
+            }
+            case FieldDataType.DateTime:
+            {
+                if (value.ValueKind != JsonValueKind.String)
+                {
+                    dbSession.SetFldValue(objId, fldId, ReadOnlySpan<byte>.Empty);
+                    return;
+                }
+
+                var s = value.GetString();
+                if (string.IsNullOrWhiteSpace(s))
+                {
+                    dbSession.SetFldValue(objId, fldId, ReadOnlySpan<byte>.Empty);
+                    return;
+                }
+
+                var dt = DateTime.Parse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+                dbSession.SetFldValue(objId, fldId, dt.AsSpan());
+                return;
+            }
+            case FieldDataType.Boolean:
+            {
+                if (value.ValueKind != JsonValueKind.True && value.ValueKind != JsonValueKind.False)
+                {
+                    dbSession.SetFldValue(objId, fldId, ReadOnlySpan<byte>.Empty);
+                    return;
+                }
+
+                bool b = value.GetBoolean();
+                dbSession.SetFldValue(objId, fldId, b.AsSpan());
+                return;
+            }
+            default:
+                dbSession.SetFldValue(objId, fldId, ReadOnlySpan<byte>.Empty);
+                return;
+        }
     }
 
     private static void WriteScalarFieldValue(Utf8JsonWriter writer, FieldDataType type, ReadOnlySpan<byte> raw)
