@@ -72,8 +72,8 @@ public sealed class HistoryCommit
 
 /// <summary>
 /// History storage:
-/// - Commit record stored in <see cref="Shared.Environment.HistoryDb"/> with key = UUIDv7 (big-endian bytes), enabling linear scan of commits.
-/// - Object index stored in <see cref="Shared.Environment.HistoryObjIndexDb"/> as dupsort: objId -> commitId (also time-ordered by UUIDv7 bytes).
+/// - Commit record stored in <see cref="Shared.Environment.HistoryDb"/> with key = UUIDv7 bytes.
+/// - Object index stored in <see cref="Shared.Environment.HistoryObjIndexDb"/> as dupsort: objId -> commitId.
 /// </summary>
 public static class History
 {
@@ -141,6 +141,7 @@ public static class History
         });
 
         var commitKey = Guid.CreateVersion7();
+
 
         Guid currentObjId = Guid.Empty;
         bool hasCurrentObj = false;

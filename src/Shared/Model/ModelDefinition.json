@@ -24,6 +24,24 @@
       },
       "RefType": "Multiple",
       "OtherReferenceFielGuid": "d2b98e24-5786-4502-b2cf-5dea14097765"
+    },
+    {
+      "Id": "ca3470c1-cf36-415a-88c1-47c2700fc37d",
+      "Key": "ImportedModels",
+      "Name": {
+        "Default": "Imported Models"
+      },
+      "RefType": "Multiple",
+      "OtherReferenceFielGuid": "bff6be49-6aed-4998-91ab-28702a3e29b0"
+    },
+    {
+      "Id": "bff6be49-6aed-4998-91ab-28702a3e29b0",
+      "Key": "ImportedBy",
+      "Name": {
+        "Default": "Is being imported by"
+      },
+      "RefType": "Multiple",
+      "OtherReferenceFielGuid": "ca3470c1-cf36-415a-88c1-47c2700fc37d"
     }
   ]
 }

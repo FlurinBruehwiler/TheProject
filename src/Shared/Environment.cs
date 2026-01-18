@@ -16,7 +16,6 @@ public class Environment : IDisposable
     public required ProjectModel Model;
 
     public static Environment Create(ProjectModel model, string dbName = "database")
-
     {
         // NOTE: This is intentionally destructive and used by tests/dev.
         if (Directory.Exists(dbName))

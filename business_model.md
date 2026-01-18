@@ -25,12 +25,34 @@ The Database consists of:
 - Cached Values?
 - The Documents (Blob storage)
 
+## Logical Database Format
+
 We need a logical database format, that can be used to export/import parts of the database. This has many usecases:
 - Testing (Testdata can be stored in this format)
 - Exporting/Importing models from on database into another one
 - etc
 
 Should this format be text based? Probably yes.
+
+Should it just be json? eg:
+```json
+{
+  "entities": {
+    "guid": {
+      "$type": "guid",
+      "fieldA": "fieldValue",
+      "fieldB": 123,
+      "asoFld": "guid",
+      "multiAsoFld": [ "guid", "guid" ]
+    } 
+  }
+}
+```
+
+
+
+## Model Storage
+
 
 Right now we store the models in a JSON file, this needs to change. We want a basic cli that can be used to interact with the database, while we don't have a full GUI yet.
 I'm not yet sure if we want a cli in the final product, but we probably do.
@@ -44,4 +66,9 @@ The Model is modeled like this:
     - Code (List/Hierarchy of documents)
     - StaticEntities
 
+
 The idea is to have to database schema, as normal data in the database. I'm not yet sure if this is a good idea. 
+
+enums: currently we don't have enums, we have to decide what kind of enums we want. One option is just to not allow, enums, instead the user can
+define an Type and the have default instances of that type which represent the enum variants, this is very flexible. The downside is, that it is a bit complex, for simple cases.
+If we define a separate enum construct we need to define: Is it extensible? Is there a translation system for the enums?
