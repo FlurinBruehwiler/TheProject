@@ -35,6 +35,8 @@ public static class DbCommands
         }, CliOptions.Db, forceOption);
 
         db.AddCommand(init);
+        db.AddCommand(DbDumpJsonCommand.Build());
+        db.AddCommand(DbLoadJsonCommand.Build());
         return db;
     }
 }
