@@ -12,8 +12,7 @@ public class JsonDumpImportTests
     [Fact]
     public void FromJson_Creates_Objects_And_Fields_And_Assocs()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         using (var session = new DbSession(env))
         {
@@ -58,8 +57,7 @@ public class JsonDumpImportTests
     [Fact]
     public void FromJson_Updates_Existing_Object_Instead_Of_Creating_Duplicate()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid fixedId;
 
@@ -92,7 +90,7 @@ public class JsonDumpImportTests
         }
 
         using var readSession = new DbSession(env, readOnly: true);
-        var loaded = readSession.GetObjFromGuid<TestingFolder>(fixedId);
+        var loaded = readSession.GetObjFromGuid<TestingFolder>(fixedId).GetValueOrDefault();
         Assert.Equal("After", loaded.Name);
 
         var count = Searcher.Search<TestingFolder>(readSession).Count();
@@ -102,8 +100,7 @@ public class JsonDumpImportTests
     [Fact]
     public void FromJson_Removes_Missing_Fields_And_Assocs_To_Match_Json()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid aId;
         Guid bId;
@@ -147,7 +144,7 @@ public class JsonDumpImportTests
         }
 
         using var readSession = new DbSession(env, readOnly: true);
-        var aReloaded = readSession.GetObjFromGuid<TestingFolder>(aId);
+        var aReloaded = readSession.GetObjFromGuid<TestingFolder>(aId).GetValueOrDefault();
 
         Assert.Equal("A", aReloaded.Name);
 

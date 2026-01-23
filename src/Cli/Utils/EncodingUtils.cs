@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Shared;
+using Shared.Database;
 
 namespace Cli.Utils;
 

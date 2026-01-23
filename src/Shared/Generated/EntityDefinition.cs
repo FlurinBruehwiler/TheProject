@@ -49,7 +49,7 @@ public partial struct EntityDefinition : ITransactionObject, IEquatable<EntityDe
     [MemoryPackIgnore]
     public AssocCollection<FieldDefinition> FieldDefinitions => new(DbSession, ObjId, Fields.FieldDefinitions, FieldDefinition.Fields.OwningEntity);
     [MemoryPackIgnore]
-    public AssocCollection<FieldDefinition> ReferenceFieldDefinitions => new(DbSession, ObjId, Fields.ReferenceFieldDefinitions, FieldDefinition.Fields.OwningEntity);
+    public AssocCollection<ReferenceFieldDefinition> ReferenceFieldDefinitions => new(DbSession, ObjId, Fields.ReferenceFieldDefinitions, ReferenceFieldDefinition.Fields.OwningEntity);
     [MemoryPackIgnore]
     public AssocCollection<EntityDefinition> Parents => new(DbSession, ObjId, Fields.Parents, EntityDefinition.Fields.Children);
     [MemoryPackIgnore]

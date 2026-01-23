@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Cli.Utils;
+using Model.Generated;
 using Shared.Database;
 using Environment = Shared.Environment;
 
@@ -23,16 +24,15 @@ public static class ObjShowCommand
             return Task.Run(() =>
             {
                 var resolvedDb = DbPath.Resolve(dbDir, allowCwd: true);
-                var model = ModelLoader.Load();
 
-                using var env = Environment.Open(model, resolvedDb);
+                using var env = Environment.Open(resolvedDb);
                 using var session = new DbSession(env, readOnly: true);
 
                 var typId = session.GetTypId(objId);
                 if (typId == Guid.Empty)
                     throw new Exception($"Object '{objId}' not found");
 
-                var entity = model.EntityDefinitions.FirstOrDefault(e => e.Id == typId);
+                var entity = session.GetObjFromGuid<EntityDefinition>(typId);
                 var typeName = entity?.Key ?? typId.ToString();
 
                 Console.WriteLine($"ObjId: {objId}");
@@ -41,23 +41,23 @@ public static class ObjShowCommand
                 if (entity is null)
                     return;
 
-                foreach (var fld in entity.Fields)
+                foreach (var fld in entity.Value.FieldDefinitions)
                 {
-                    var bytes = session.GetFldValue(objId, fld.Id);
-                    var v = EncodingUtils.DecodeScalar(fld.DataType, bytes);
+                    var bytes = session.GetFldValue(objId, Guid.Parse(fld.Id));
+                    var v = EncodingUtils.DecodeScalar(Enum.Parse<FieldDataType>(fld.DataType), bytes);
                     Console.WriteLine($"{fld.Key}: {v}");
                 }
 
-                foreach (var rf in entity.ReferenceFields)
+                foreach (var rf in entity.Value.ReferenceFieldDefinitions)
                 {
                     Console.WriteLine($"{rf.Key}:");
 
-                    if (rf.RefType == Shared.RefType.Multiple)
+                    if (rf.RefType == nameof(RefType.Multiple))
                     {
                         int shown = 0;
-                        foreach (var other in session.EnumerateAso(objId, rf.Id))
+                        foreach (var other in session.EnumerateAso(objId, Guid.Parse(rf.Id)))
                         {
-                            Console.WriteLine($"  - {other.ObjId} ({ModelLookup.FormatType(model, session.GetTypId(other.ObjId))})");
+                            Console.WriteLine($"  - {other.ObjId} ({ModelLookup.FormatType(session, session.GetTypId(other.ObjId))})");
                             shown++;
                         }
 
@@ -66,14 +66,14 @@ public static class ObjShowCommand
                     }
                     else
                     {
-                        var otherId = session.GetSingleAsoValue(objId, rf.Id);
+                        var otherId = session.GetSingleAsoValue(objId, Guid.Parse(rf.Id));
                         if (!otherId.HasValue)
                         {
                             Console.WriteLine("  (empty)");
                         }
                         else
                         {
-                            Console.WriteLine($"  - {otherId.Value} ({ModelLookup.FormatType(model, session.GetTypId(otherId.Value))})");
+                            Console.WriteLine($"  - {otherId.Value} ({ModelLookup.FormatType(session, session.GetTypId(otherId.Value))})");
                         }
                     }
                 }

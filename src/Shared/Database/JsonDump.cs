@@ -6,11 +6,16 @@ using System.Text.Json;
 
 namespace Shared.Database;
 
+//A Database has a "Model" (this model can then reference other models)
+//Lets create a metadata table, for the guid of the model is stored
+
+
 public static class JsonDump
 {
     public static string GetJsonDump(Environment env, DbSession dbSession)
     {
-        var entityById = env.Model.EntityDefinitions.ToDictionary(x => x.Id, x => x);
+        var model = dbSession.GetObjFromGuid<Model.Generated.Model>(env.ModelGuid);
+        var entityById = model!.Value.GetAllEntityDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
 
         using var stream = new MemoryStream();
         using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
@@ -29,26 +34,26 @@ public static class JsonDump
 
                 if (entityById.TryGetValue(typId, out var entity))
                 {
-                    foreach (var field in entity.Fields)
+                    foreach (var field in entity.FieldDefinitions)
                     {
-                        var raw = dbSession.GetFldValue(objId, field.Id);
+                        var raw = dbSession.GetFldValue(objId, Guid.Parse(field.Id));
                         if (raw.Length == 0)
                             continue;
 
                         writer.WritePropertyName(field.Key);
-                        WriteScalarFieldValue(writer, field.DataType, raw);
+                        WriteScalarFieldValue(writer,  Enum.Parse<FieldDataType>(field.DataType) , raw);
                     }
 
-                    foreach (var refField in entity.ReferenceFields)
+                    foreach (var refField in entity.ReferenceFieldDefinitions)
                     {
                         ArrayBufferWriter<Guid>? collected = null;
-                        foreach (var aso in dbSession.EnumerateAso(objId, refField.Id))
+                        foreach (var aso in dbSession.EnumerateAso(objId, Guid.Parse(refField.Id)))
                         {
                             collected ??= new ArrayBufferWriter<Guid>();
                             collected.GetSpan(1)[0] = aso.ObjId;
                             collected.Advance(1);
 
-                            if (refField.RefType != RefType.Multiple)
+                            if (refField.RefType != nameof(RefType.Multiple))
                                 break;
                         }
 
@@ -57,7 +62,7 @@ public static class JsonDump
 
                         writer.WritePropertyName(refField.Key);
 
-                        if (refField.RefType == RefType.Multiple)
+                        if (refField.RefType == nameof(RefType.Multiple))
                         {
                             writer.WriteStartArray();
                             foreach (var id in collected.WrittenSpan)
@@ -120,7 +125,10 @@ public static class JsonDump
             }
         }
 
-        var entityById = env.Model.EntityDefinitions.ToDictionary(x => x.Id, x => x);
+
+        var model = dbSession.GetObjFromGuid<Model.Generated.Model>(env.ModelGuid);
+        var entityById = model!.Value.GetAllEntityDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
+
 
         // Pass 2: set fields and associations.
         foreach (var entityProp in entities.EnumerateObject())
@@ -145,34 +153,34 @@ public static class JsonDump
             if (dbSession.GetTypId(objId) != typId)
                 continue;
 
-            foreach (var field in entity.Fields)
+            foreach (var field in entity.FieldDefinitions)
             {
                 if (entityJson.TryGetProperty(field.Key, out var value))
                 {
-                    SetScalarFieldFromJson(dbSession, objId, field.Id, field.DataType, value);
+                    SetScalarFieldFromJson(dbSession, objId, Guid.Parse(field.Id), Enum.Parse<FieldDataType>(field.DataType), value);
                 }
                 else
                 {
                     // Match dump semantics: missing means "unset".
-                    dbSession.SetFldValue(objId, field.Id, ReadOnlySpan<byte>.Empty);
+                    dbSession.SetFldValue(objId, Guid.Parse(field.Id), ReadOnlySpan<byte>.Empty);
                 }
             }
 
-            foreach (var refField in entity.ReferenceFields)
+            foreach (var refField in entity.ReferenceFieldDefinitions)
             {
                 var fldIdA = refField.Id;
-                var fldIdB = refField.OtherReferenceFielGuid;
+                var fldIdB = refField.OtherReferenceFields;
 
                 if (!entityJson.TryGetProperty(refField.Key, out var value) || value.ValueKind == JsonValueKind.Null)
                 {
-                    dbSession.RemoveAllAso(objId, fldIdA);
+                    dbSession.RemoveAllAso(objId, Guid.Parse(fldIdA));
                     continue;
                 }
 
                 // Always clear existing connections first so the DB matches the json.
-                dbSession.RemoveAllAso(objId, fldIdA);
+                dbSession.RemoveAllAso(objId, Guid.Parse(fldIdA));
 
-                if (refField.RefType == RefType.Multiple)
+                if (refField.RefType == nameof(RefType.Multiple))
                 {
                     if (value.ValueKind == JsonValueKind.Array)
                     {
@@ -182,13 +190,13 @@ public static class JsonDump
                                 continue;
 
                             if (Guid.TryParse(item.GetString(), out var otherObjId))
-                                dbSession.CreateAso(objId, fldIdA, otherObjId, fldIdB);
+                                dbSession.CreateAso(objId, Guid.Parse(fldIdA), otherObjId, Guid.Parse(fldIdB.Id));
                         }
                     }
                     else if (value.ValueKind == JsonValueKind.String)
                     {
                         if (Guid.TryParse(value.GetString(), out var otherObjId))
-                            dbSession.CreateAso(objId, fldIdA, otherObjId, fldIdB);
+                            dbSession.CreateAso(objId, Guid.Parse(fldIdA), otherObjId, Guid.Parse(fldIdB.Id));
                     }
 
                     continue;
@@ -198,7 +206,7 @@ public static class JsonDump
                 if (value.ValueKind == JsonValueKind.String && Guid.TryParse(value.GetString(), out var singleId))
                 {
                     if (singleId != Guid.Empty)
-                        dbSession.CreateAso(objId, fldIdA, singleId, fldIdB);
+                        dbSession.CreateAso(objId, Guid.Parse(fldIdA), singleId, Guid.Parse(fldIdB.Id));
                 }
             }
         }
@@ -331,4 +339,20 @@ public static class JsonDump
                 return;
         }
     }
+}
+
+public enum RefType
+{
+    SingleOptional,
+    SingleMandatory,
+    Multiple
+}
+
+public enum FieldDataType
+{
+    Integer,
+    Decimal,
+    String,
+    DateTime,
+    Boolean
 }

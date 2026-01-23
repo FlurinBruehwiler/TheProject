@@ -69,7 +69,7 @@ public sealed class DbSession : IDisposable
 
             History.WriteCommit(Arena, Environment, writeTransaction, Store.ChangeSet!, timestampUtc, userId);
 
-            Searcher.UpdateSearchIndex(Environment, writeTransaction, Store.ChangeSet!);
+            Searcher.UpdateSearchIndex(this, writeTransaction, Store.ChangeSet!);
  
             Store.Commit(writeTransaction);
  
@@ -413,8 +413,9 @@ public sealed class DbSession : IDisposable
         }
     }
 
-    public T GetObjFromGuid<T>(Guid objId) where T : ITransactionObject, new()
+    public T? GetObjFromGuid<T>(Guid objId) where T : struct, ITransactionObject
     {
+        //todo
         //i'm not sure if this function is at the right place....
         //we should also validate that this object exists and has the right type
         return new T
@@ -422,6 +423,17 @@ public sealed class DbSession : IDisposable
             ObjId = objId,
             DbSession = this
         };
+    }
+
+    public bool TryGetObjFromGuid<T>(Guid objId, out T val) where T : ITransactionObject, new()
+    {
+        //todo
+        val = new T
+        {
+            ObjId = objId,
+            DbSession = this
+        };
+        return true;
     }
 }
 

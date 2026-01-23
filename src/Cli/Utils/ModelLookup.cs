@@ -1,21 +1,62 @@
-using Shared;
+using Model.Generated;
+using Shared.Database;
 
 namespace Cli.Utils;
 
 public static class ModelLookup
 {
-    public static EntityDefinition FindEntity(ProjectModel model, string typeKey)
+    public static ReferenceFieldDefinition? GetRefFld(EntityDefinition entityDefinition, string fldKey)
     {
-        var entity = model.EntityDefinitions.FirstOrDefault(e => string.Equals(e.Key, typeKey, StringComparison.OrdinalIgnoreCase));
-        if (entity is null)
-            throw new Exception($"Unknown type '{typeKey}'. Run 'types' to see available types.");
+        foreach (var fld in entityDefinition.ReferenceFieldDefinitions)
+        {
+            if (fld.Key == fldKey)
+            {
+                return fld;
+            }
+        }
 
-        return entity;
+        foreach (var ped in entityDefinition.Parents)
+        {
+            var r = GetRefFld(ped, fldKey);
+            if (r != null)
+                return r;
+        }
+
+        return null;
     }
 
-    public static string FormatType(ProjectModel model, Guid typId)
+    public static FieldDefinition? GetFld(EntityDefinition entityDefinition, string fldKey)
     {
-        var e = model.EntityDefinitions.FirstOrDefault(x => x.Id == typId);
-        return e?.Key ?? typId.ToString();
+        foreach (var fld in entityDefinition.FieldDefinitions)
+        {
+            if (fld.Key == fldKey)
+            {
+                return fld;
+            }
+        }
+
+        foreach (var ped in entityDefinition.Parents)
+        {
+            var r = GetFld(ped, fldKey);
+            if (r != null)
+                return r;
+        }
+
+        return null;
+    }
+
+    public static EntityDefinition GetType(DbSession session, string key)
+    {
+        return Searcher.Search<EntityDefinition>(session, new StringCriterion
+        {
+            FieldId = EntityDefinition.Fields.Key,
+            Value = key,
+            Type = StringCriterion.MatchType.Exact
+        }).First();
+    }
+
+    public static string FormatType(DbSession session, Guid typId)
+    {
+        return session.GetObjFromGuid<EntityDefinition>(typId)?.Key ?? typId.ToString();
     }
 }

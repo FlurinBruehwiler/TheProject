@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Shared;
 using Shared.Database;
 using TestModel.Generated;
 using Environment = Shared.Environment;
@@ -12,8 +11,7 @@ public class HistoryTests
     [Fact]
     public void History_Commits_Can_Be_Enumerated()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid objId;
 
@@ -45,8 +43,7 @@ public class HistoryTests
     [Fact]
     public void History_Assoc_Add_And_Remove_Are_Recorded_On_Both_Sides()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid aId;
         Guid bId;
@@ -94,8 +91,7 @@ public class HistoryTests
     [Fact]
     public void History_Field_Delete_Is_Recorded_As_Defaulting()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid objId;
 
@@ -132,8 +128,7 @@ public class HistoryTests
     [Fact]
     public void History_Records_Field_Changes_For_All_Types()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid objId;
 
@@ -191,8 +186,7 @@ public class HistoryTests
     [Fact]
     public void History_Object_Delete_Records_Assoc_Removals_Without_Field_Noise()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid aId;
         Guid bId;
@@ -236,8 +230,7 @@ public class HistoryTests
     [Fact]
     public void History_Multiple_Changes_In_Single_Commit_Are_Recorded()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid aId;
         Guid bId;
@@ -289,8 +282,7 @@ public class HistoryTests
     [Fact]
     public void History_Last_Write_Wins_Within_A_Commit_For_A_Field()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid objId;
 

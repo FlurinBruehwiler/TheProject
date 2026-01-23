@@ -76,3 +76,8 @@ The idea is to have to database schema, as normal data in the database. I'm not 
 enums: currently we don't have enums, we have to decide what kind of enums we want. One option is just to not allow, enums, instead the user can
 define an Type and the have default instances of that type which represent the enum variants, this is very flexible. The downside is, that it is a bit complex, for simple cases.
 If we define a separate enum construct we need to define: Is it extensible? Is there a translation system for the enums?
+
+## Custom Field Data Types
+- Enum
+- Guid
+- etc

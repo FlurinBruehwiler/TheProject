@@ -1,15 +1,14 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using Shared;
+using Shared.Database;
 
 namespace SourceGen;
 
 public static class ModelGenerator
 {
-    public static void Generate(string modelDirectory)
+    public static void Generate(Model.Generated.Model model)
     {
-        var model = ProjectModel.CreateFromDirectory(modelDirectory);
-
         foreach (var entity in model.EntityDefinitions)
         {
             var sourceBuilder = new SourceBuilder();
@@ -21,7 +20,7 @@ public static class ModelGenerator
             sourceBuilder.AppendLine("using Shared;");
             sourceBuilder.AppendLine("using Shared.Database;");
 
-            sourceBuilder.AppendLine($"namespace {Path.GetFileName(modelDirectory)}.Generated;");
+            sourceBuilder.AppendLine($"namespace {Path.GetFileName(model.Name)}.Generated;");
             sourceBuilder.AppendLine();
 
             sourceBuilder.AppendLine("[MemoryPackable]");
@@ -50,35 +49,35 @@ public static class ModelGenerator
             sourceBuilder.AppendLine("public Guid ObjId { get; set; }");
             sourceBuilder.AppendLine();
 
-            foreach (var field in entity.Fields)
+            foreach (var field in entity.FieldDefinitions)
             {
                 var dataType = field.DataType switch
                 {
-                    FieldDataType.Integer => "long",
-                    FieldDataType.Decimal => "decimal",
-                    FieldDataType.String => "string",
-                    FieldDataType.DateTime => "DateTime",
-                    FieldDataType.Boolean => "bool",
+                    nameof(FieldDataType.Integer) => "long",
+                    nameof(FieldDataType.Decimal) => "decimal",
+                    nameof(FieldDataType.String) => "string",
+                    nameof(FieldDataType.DateTime) => "DateTime",
+                    nameof(FieldDataType.Boolean) => "bool",
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
                 var toFunction = field.DataType switch
                 {
-                    FieldDataType.Integer => "MemoryMarshal.Read<long>({0})",
-                    FieldDataType.Decimal => "MemoryMarshal.Read<decimal>({0})",
-                    FieldDataType.String => "Encoding.Unicode.GetString({0})",
-                    FieldDataType.DateTime => "MemoryMarshal.Read<DateTime>({0})",
-                    FieldDataType.Boolean => "MemoryMarshal.Read<bool>({0})",
+                    nameof(FieldDataType.Integer) => "MemoryMarshal.Read<long>({0})",
+                    nameof(FieldDataType.Decimal) => "MemoryMarshal.Read<decimal>({0})",
+                    nameof(FieldDataType.String) => "Encoding.Unicode.GetString({0})",
+                    nameof(FieldDataType.DateTime) => "MemoryMarshal.Read<DateTime>({0})",
+                    nameof(FieldDataType.Boolean) => "MemoryMarshal.Read<bool>({0})",
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
                 var fromFunction = field.DataType switch
                 {
-                    FieldDataType.Integer => "value.AsSpan()",
-                    FieldDataType.Decimal => "value.AsSpan()",
-                    FieldDataType.String => "Encoding.Unicode.GetBytes(value)",
-                    FieldDataType.DateTime => "value.AsSpan()",
-                    FieldDataType.Boolean => "value.AsSpan()",
+                    nameof(FieldDataType.Integer) => "value.AsSpan()",
+                    nameof(FieldDataType.Decimal) => "value.AsSpan()",
+                    nameof(FieldDataType.String) => "Encoding.Unicode.GetBytes(value)",
+                    nameof(FieldDataType.DateTime) => "value.AsSpan()",
+                    nameof(FieldDataType.Boolean) => "value.AsSpan()",
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
@@ -93,30 +92,30 @@ public static class ModelGenerator
                 sourceBuilder.AppendLine("}");
             }
 
-            foreach (var refField in entity.ReferenceFields)
+            foreach (var refField in entity.ReferenceFieldDefinitions)
             {
-                if (refField.RefType is RefType.SingleMandatory or RefType.SingleOptional)
+                if (refField.RefType is nameof(RefType.SingleMandatory) or nameof(RefType.SingleOptional))
                 {
-                    var optional = refField.RefType == RefType.SingleOptional ? "?" : string.Empty;
-                    var getMethod = refField.RefType == RefType.SingleOptional ? "GetNullableAssoc" : "GetAssoc";
+                    var optional = refField.RefType == nameof(RefType.SingleOptional) ? "?" : string.Empty;
+                    var getMethod = refField.RefType == nameof(RefType.SingleOptional) ? "GetNullableAssoc" : "GetAssoc";
 
                     sourceBuilder.AppendLine("[MemoryPackIgnore]");
-                    sourceBuilder.AppendLine($"public {refField.OtherReferenceField.OwningEntity.Key}{optional} {refField.Key}");
+                    sourceBuilder.AppendLine($"public {refField.OtherReferenceFields.OwningEntity.Key}{optional} {refField.Key}");
                     sourceBuilder.AppendLine("{");
                     sourceBuilder.AddIndent();
 
-                    var valueAccess = refField.RefType == RefType.SingleOptional ? "value?.ObjId ?? Guid.Empty" : "value.ObjId";
+                    var valueAccess = refField.RefType == nameof(RefType.SingleOptional) ? "value?.ObjId ?? Guid.Empty" : "value.ObjId";
 
-                    sourceBuilder.AppendLine($"get => GeneratedCodeHelper.{getMethod}<{refField.OtherReferenceField.OwningEntity.Key}>(DbSession, ObjId, Fields.{refField.Key});");
-                    sourceBuilder.AppendLine($"set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.{refField.Key}, {valueAccess}, {refField.OtherReferenceField.OwningEntity.Key}.Fields.{refField.OtherReferenceField.Key});");
+                    sourceBuilder.AppendLine($"get => GeneratedCodeHelper.{getMethod}<{refField.OtherReferenceFields.OwningEntity.Key}>(DbSession, ObjId, Fields.{refField.Key});");
+                    sourceBuilder.AppendLine($"set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.{refField.Key}, {valueAccess}, {refField.OtherReferenceFields.OwningEntity.Key}.Fields.{refField.OtherReferenceFields.Key});");
 
                     sourceBuilder.RemoveIndent();
                     sourceBuilder.AppendLine("}");
                 }
-                else if (refField.RefType == RefType.Multiple)
+                else if (refField.RefType == nameof(RefType.Multiple))
                 {
                     sourceBuilder.AppendLine("[MemoryPackIgnore]");
-                    sourceBuilder.AppendLine($"public AssocCollection<{refField.OtherReferenceField.OwningEntity.Key}> {refField.Key} => new(DbSession, ObjId, Fields.{refField.Key}, {refField.OtherReferenceField.OwningEntity.Key}.Fields.{refField.OtherReferenceField.Key});");
+                    sourceBuilder.AppendLine($"public AssocCollection<{refField.OtherReferenceFields.OwningEntity.Key}> {refField.Key} => new(DbSession, ObjId, Fields.{refField.Key}, {refField.OtherReferenceFields.OwningEntity.Key}.Fields.{refField.OtherReferenceFields.Key});");
                 }
             }
 
@@ -139,12 +138,12 @@ public static class ModelGenerator
             sourceBuilder.AppendLine("{");
             sourceBuilder.AddIndent();
 
-            foreach (var fieldDefinition in entity.Fields)
+            foreach (var fieldDefinition in entity.FieldDefinitions)
             {
                 sourceBuilder.AppendLine($"public static readonly Guid {fieldDefinition.Key} = {GetGuidLiteral(fieldDefinition.Id)};");
             }
 
-            foreach (var fieldDefinition in entity.ReferenceFields)
+            foreach (var fieldDefinition in entity.ReferenceFieldDefinitions)
             {
                 sourceBuilder.AppendLine($"public static readonly Guid {fieldDefinition.Key} = {GetGuidLiteral(fieldDefinition.Id)};");
             }
@@ -156,13 +155,14 @@ public static class ModelGenerator
             sourceBuilder.RemoveIndent();
             sourceBuilder.AppendLine("}");
 
-            var generatedPath = Path.Combine(modelDirectory, "../Generated", $"{entity.Key}.cs");
+            var generatedPath = Path.Combine(Helper.GetRootDir(), "../Shared/Generated", $"{entity.Key}.cs");
             File.WriteAllText(generatedPath, sourceBuilder.ToString());
         }
     }
 
-    private static string GetGuidLiteral(Guid guid)
+    private static string GetGuidLiteral(string g)
     {
+        var guid = Guid.Parse(g);
         Span<byte> guidData = stackalloc byte[16];
         MemoryMarshal.Write(guidData, guid);
 

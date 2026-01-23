@@ -28,8 +28,7 @@ public static class DbCommands
                 Directory.Delete(resolvedDb, recursive: true);
             }
 
-            var model = ModelLoader.Load();
-            using var _ = Environment.Init(model, resolvedDb);
+            using var _ = Environment.Init(resolvedDb);
 
             Console.WriteLine($"Initialized database at '{resolvedDb}'.");
         }, CliOptions.Db, forceOption);

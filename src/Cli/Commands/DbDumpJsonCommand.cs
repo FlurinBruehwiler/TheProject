@@ -22,9 +22,8 @@ public static class DbDumpJsonCommand
         cmd.SetHandler((DirectoryInfo? dbDir, FileInfo? outFile) =>
         {
             var resolvedDb = DbPath.Resolve(dbDir, allowCwd: true);
-            var model = ModelLoader.Load();
 
-            using var env = Environment.Open(model, resolvedDb);
+            using var env = Environment.Open(resolvedDb);
             using var session = new DbSession(env, readOnly: true);
 
             var json = JsonDump.GetJsonDump(env, session);

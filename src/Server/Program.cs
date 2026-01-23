@@ -9,10 +9,7 @@ using Shared.Database;
 
 try
 {
-    var root = Helper.GetRootDir();
-    var model = ProjectModel.CreateFromDirectory(Path.Combine(root, "Shared/Model"));
-
-    using var env = Shared.Environment.Create(model);
+    using var env = Shared.Environment.Create();
 
     Guid parentFolderObjId;
     Guid childObjId;

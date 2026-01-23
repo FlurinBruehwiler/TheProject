@@ -26,9 +26,8 @@ public static class DbLoadJsonCommand
                 throw new Exception($"Input file not found: '{file.FullName}'");
 
             var resolvedDb = DbPath.Resolve(dbDir, allowCwd: true);
-            var model = ModelLoader.Load();
 
-            using var env = Environment.Open(model, resolvedDb);
+            using var env = Environment.Open(resolvedDb);
             using var session = new DbSession(env);
 
             var json = File.ReadAllText(file.FullName);

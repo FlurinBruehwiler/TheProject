@@ -13,9 +13,11 @@ public class Environment : IDisposable
     public required LightningDatabase StringSearchIndex;
     public required LightningDatabase NonStringSearchIndex;
     public required LightningDatabase FieldPresenceIndex;
-    public required ProjectModel Model;
+    public required Guid ModelGuid;
 
-    public static Environment Create(ProjectModel model, string dbName = "database")
+    //todo refactor this, too many methods doing the same thing!
+
+    public static Environment Create(string dbName = "database")
     {
         // NOTE: This is intentionally destructive and used by tests/dev.
         if (Directory.Exists(dbName))
@@ -23,26 +25,26 @@ public class Environment : IDisposable
             Directory.Delete(dbName, recursive: true);
         }
 
-        return OpenInternal(model, dbName, create: true);
+        return OpenInternal(dbName, create: true);
     }
 
-    public static Environment Init(ProjectModel model, string dbName)
+    public static Environment Init(string dbName)
     {
         Directory.CreateDirectory(dbName);
-        return OpenInternal(model, dbName, create: true);
+        return OpenInternal(dbName, create: true);
     }
 
-    public static Environment Open(ProjectModel model, string dbName)
+    public static Environment Open(string dbDir)
     {
-        if (!Directory.Exists(dbName))
-            throw new DirectoryNotFoundException($"Database directory '{dbName}' does not exist");
+        if (!Directory.Exists(dbDir))
+            throw new DirectoryNotFoundException($"Database directory '{dbDir}' does not exist");
 
-        return OpenInternal(model, dbName, create: false);
+        return OpenInternal(dbDir, create: false);
     }
 
-    private static Environment OpenInternal(ProjectModel model, string dbName, bool create)
+    private static Environment OpenInternal(string dbDir, bool create)
     {
-        var env = new LightningEnvironment(dbName, new EnvironmentConfiguration
+        var env = new LightningEnvironment(dbDir, new EnvironmentConfiguration
         {
             MaxDatabases = 128
         });
@@ -97,7 +99,7 @@ public class Environment : IDisposable
             StringSearchIndex = stringSearchIndex,
             NonStringSearchIndex = nonStringSearchIndex,
             FieldPresenceIndex = fieldPresenceIndex,
-            Model = model
+            ModelGuid = Guid.NewGuid() //todo
         };
     }
 

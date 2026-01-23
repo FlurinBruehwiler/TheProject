@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Cli.Utils;
+using Model.Generated;
 using Shared.Database;
 using Environment = Shared.Environment;
 
@@ -20,26 +21,25 @@ public static class ObjListCommand
         cmd.SetHandler((DirectoryInfo? dbDir, string? typeKey, int limit) =>
         {
             var resolvedDb = DbPath.Resolve(dbDir, allowCwd: true);
-            var model = ModelLoader.Load();
 
             Guid? filterTypId = null;
             string[]? scalarKeys = null;
             string[]? refKeys = null;
-            Shared.FieldDefinition[]? scalarFields = null;
-            Shared.ReferenceFieldDefinition[]? refFields = null;
+            FieldDefinition[]? scalarFields = null;
+            ReferenceFieldDefinition[]? refFields = null;
+
+            using var env = Environment.Open(resolvedDb);
+            using var session = new DbSession(env, readOnly: true);
 
             if (!string.IsNullOrWhiteSpace(typeKey))
             {
-                var entity = ModelLookup.FindEntity(model, typeKey);
-                filterTypId = entity.Id;
-                scalarFields = entity.Fields;
-                refFields = entity.ReferenceFields;
+                var entity = ModelLookup.GetType(session, typeKey);
+                filterTypId = Guid.Parse(entity.Id);
+                scalarFields = entity.FieldDefinitions.ToArray();
+                refFields = entity.ReferenceFieldDefinitions.ToArray();
                 scalarKeys = scalarFields.Select(f => f.Key).ToArray();
                 refKeys = refFields.Select(f => f.Key).ToArray();
             }
-
-            using var env = Environment.Open(model, resolvedDb);
-            using var session = new DbSession(env, readOnly: true);
 
             var headers = new List<string> { "ObjId", "Type" };
             if (scalarKeys is not null) headers.AddRange(scalarKeys);
@@ -55,7 +55,7 @@ public static class ObjListCommand
 
                 if (!filterTypId.HasValue)
                 {
-                    rows.Add([objId.ToString(), ModelLookup.FormatType(model, typId)]);
+                    rows.Add([objId.ToString(), ModelLookup.FormatType(session, typId)]);
                     count++;
                     if (count >= limit) break;
                     continue;
@@ -63,13 +63,13 @@ public static class ObjListCommand
 
                 var row = new string[headers.Count];
                 row[0] = objId.ToString();
-                row[1] = ModelLookup.FormatType(model, typId);
+                row[1] = ModelLookup.FormatType(session, typId);
 
                 int col = 2;
                 foreach (var fld in scalarFields!)
                 {
-                    var bytes = session.GetFldValue(objId, fld.Id);
-                    row[col++] = EncodingUtils.DecodeScalar(fld.DataType, bytes);
+                    var bytes = session.GetFldValue(objId, Guid.Parse(fld.Id));
+                    row[col++] = EncodingUtils.DecodeScalar(Enum.Parse<FieldDataType>(fld.DataType), bytes);
                 }
 
                 foreach (var rf in refFields!)
@@ -89,12 +89,12 @@ public static class ObjListCommand
         return cmd;
     }
 
-    private static string DecodeRefValue(DbSession session, Guid objId, Shared.ReferenceFieldDefinition rf)
+    private static string DecodeRefValue(DbSession session, Guid objId, ReferenceFieldDefinition rf)
     {
-        if (rf.RefType == Shared.RefType.Multiple)
+        if (rf.RefType == nameof(RefType.Multiple))
         {
             var ids = new List<Guid>();
-            foreach (var other in session.EnumerateAso(objId, rf.Id))
+            foreach (var other in session.EnumerateAso(objId, Guid.Parse(rf.Id)))
             {
                 ids.Add(other.ObjId);
                 if (ids.Count >= 3)
@@ -104,7 +104,7 @@ public static class ObjListCommand
             if (ids.Count == 0)
                 return string.Empty;
 
-            var count = session.GetAsoCount(objId, rf.Id);
+            var count = session.GetAsoCount(objId, Guid.Parse(rf.Id));
             if (count <= 2)
                 return string.Join(", ", ids.Select(x => x.ToString()));
 
@@ -112,7 +112,7 @@ public static class ObjListCommand
             return $"{string.Join(", ", shown)} and {count - 2} more";
         }
 
-        var otherId = session.GetSingleAsoValue(objId, rf.Id);
+        var otherId = session.GetSingleAsoValue(objId, Guid.Parse(rf.Id));
         return otherId?.ToString() ?? string.Empty;
     }
 }

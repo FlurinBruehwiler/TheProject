@@ -41,22 +41,22 @@ public partial struct FieldDefinition : ITransactionObject, IEquatable<FieldDefi
         set => DbSession.SetFldValue(ObjId, Fields.Id, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
-    public string RefType
+    public string DataType
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.RefType).AsSpan());
-        set => DbSession.SetFldValue(ObjId, Fields.RefType, Encoding.Unicode.GetBytes(value));
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.DataType).AsSpan());
+        set => DbSession.SetFldValue(ObjId, Fields.DataType, Encoding.Unicode.GetBytes(value));
+    }
+    [MemoryPackIgnore]
+    public bool IsIndexed
+    {
+        get => MemoryMarshal.Read<bool>(DbSession.GetFldValue(ObjId, Fields.IsIndexed).AsSpan());
+        set => DbSession.SetFldValue(ObjId, Fields.IsIndexed, value.AsSpan());
     }
     [MemoryPackIgnore]
     public EntityDefinition OwningEntity
     {
         get => GeneratedCodeHelper.GetAssoc<EntityDefinition>(DbSession, ObjId, Fields.OwningEntity);
-        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OwningEntity, value.ObjId, EntityDefinition.Fields.ReferenceFieldDefinitions);
-    }
-    [MemoryPackIgnore]
-    public FieldDefinition OtherReferenceFields
-    {
-        get => GeneratedCodeHelper.GetAssoc<FieldDefinition>(DbSession, ObjId, Fields.OtherReferenceFields);
-        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OtherReferenceFields, value.ObjId, FieldDefinition.Fields.OtherReferenceFields);
+        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OwningEntity, value.ObjId, EntityDefinition.Fields.FieldDefinitions);
     }
 
     public static bool operator ==(FieldDefinition a, FieldDefinition b) => a.DbSession == b.DbSession && a.ObjId == b.ObjId;
@@ -66,15 +66,15 @@ public partial struct FieldDefinition : ITransactionObject, IEquatable<FieldDefi
     public override int GetHashCode() => HashCode.Combine(DbSession, ObjId);
     public override string ToString() => ObjId.ToString();
 
-    public static Guid TypId { get; } = new Guid([15, 237, 71, 33, 125, 179, 41, 68, 163, 248, 131, 18, 193, 98, 3, 131]);
+    public static Guid TypId { get; } = new Guid([61, 243, 166, 66, 56, 169, 216, 74, 150, 130, 170, 189, 201, 42, 83, 210]);
 
     public static class Fields
     {
-        public static readonly Guid Key = new Guid([242, 119, 12, 69, 255, 115, 37, 65, 168, 121, 183, 88, 64, 39, 92, 153]);
-        public static readonly Guid Name = new Guid([12, 74, 115, 50, 165, 235, 151, 75, 128, 222, 8, 24, 87, 179, 86, 204]);
-        public static readonly Guid Id = new Guid([48, 85, 244, 239, 78, 126, 31, 64, 165, 62, 9, 79, 13, 129, 94, 138]);
-        public static readonly Guid RefType = new Guid([150, 227, 78, 146, 71, 167, 144, 71, 169, 218, 5, 30, 62, 134, 118, 168]);
-        public static readonly Guid OwningEntity = new Guid([156, 58, 14, 80, 105, 196, 133, 69, 167, 196, 227, 7, 220, 41, 93, 136]);
-        public static readonly Guid OtherReferenceFields = new Guid([189, 150, 172, 80, 130, 112, 33, 72, 149, 250, 87, 233, 4, 2, 70, 171]);
+        public static readonly Guid Key = new Guid([210, 144, 93, 138, 28, 27, 142, 66, 160, 16, 154, 231, 214, 3, 221, 48]);
+        public static readonly Guid Name = new Guid([53, 137, 239, 194, 175, 252, 51, 75, 170, 49, 89, 1, 74, 76, 103, 101]);
+        public static readonly Guid Id = new Guid([226, 19, 22, 249, 249, 169, 59, 78, 150, 227, 56, 101, 3, 25, 220, 12]);
+        public static readonly Guid DataType = new Guid([140, 90, 245, 180, 115, 111, 188, 65, 176, 81, 203, 174, 177, 139, 3, 144]);
+        public static readonly Guid IsIndexed = new Guid([67, 154, 105, 46, 185, 152, 247, 66, 162, 108, 32, 37, 99, 5, 183, 203]);
+        public static readonly Guid OwningEntity = new Guid([37, 254, 151, 240, 17, 29, 179, 71, 160, 44, 0, 114, 167, 129, 165, 40]);
     }
 }

@@ -12,8 +12,7 @@ public class JsonDumpTests
     [Fact]
     public void JsonDump_Dumps_Scalar_Fields()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid objId;
         DateTime dt = new DateTime(2001, 02, 03, 04, 05, 06, DateTimeKind.Utc);
@@ -51,8 +50,7 @@ public class JsonDumpTests
     [Fact]
     public void JsonDump_Dumps_Associations_Single_And_Multiple()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid parentId;
         Guid childAId;
@@ -94,8 +92,7 @@ public class JsonDumpTests
     [Fact]
     public void JsonDump_Omits_Unset_Fields_And_Empty_Assocs()
     {
-        var testModel = ProjectModel.CreateFromDirectory("TestModel");
-        using var env = Environment.Create(testModel, dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
 
         Guid objId;
 

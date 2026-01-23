@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Cli.Utils;
+using Model.Generated;
 using Shared.Database;
 using Environment = Shared.Environment;
 
@@ -29,16 +30,15 @@ public static class ObjCreateCommand
             return Task.Run(() =>
             {
                 var resolvedDb = DbPath.Resolve(dbDir, allowCwd: true);
-                var model = ModelLoader.Load();
 
-                var entity = ModelLookup.FindEntity(model, typeKey);
-
-                using var env = Environment.Open(model, resolvedDb);
+                using var env = Environment.Open(resolvedDb);
                 using var session = new DbSession(env);
 
-                var objId = session.CreateObj(entity.Id);
+                var entity = ModelLookup.GetType(session, typeKey);
 
-                ObjectMutations.ApplySets(session, model, entity, objId, setPairs ?? Array.Empty<string>(), ObjectMutations.MultiRefMode.Add);
+                var objId = session.CreateObj(Guid.Parse(entity.Id));
+
+                ObjectMutations.ApplySets(session, entity, objId, setPairs ?? Array.Empty<string>(), ObjectMutations.MultiRefMode.Add);
 
                 session.Commit();
                 Console.WriteLine(objId);

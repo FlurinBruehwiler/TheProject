@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Cli.Utils;
+using Model.Generated;
 using Shared.Database;
 using Environment = Shared.Environment;
 
@@ -29,20 +30,19 @@ public static class ObjUpdateCommand
             return Task.Run(() =>
             {
                 var resolvedDb = DbPath.Resolve(dbDir, allowCwd: true);
-                var model = ModelLoader.Load();
 
-                using var env = Environment.Open(model, resolvedDb);
+                using var env = Environment.Open(resolvedDb);
                 using var session = new DbSession(env);
 
                 var typId = session.GetTypId(objId);
                 if (typId == Guid.Empty)
                     throw new Exception($"Object '{objId}' not found");
 
-                var entity = model.EntityDefinitions.FirstOrDefault(e => e.Id == typId);
+                var entity = session.GetObjFromGuid<EntityDefinition>(typId);
                 if (entity is null)
                     throw new Exception($"Unknown type id '{typId}' for object '{objId}'");
 
-                ObjectMutations.ApplySets(session, model, entity, objId, setPairs ?? Array.Empty<string>(), ObjectMutations.MultiRefMode.Replace);
+                ObjectMutations.ApplySets(session, entity.Value, objId, setPairs, ObjectMutations.MultiRefMode.Replace);
 
                 session.Commit();
                 Console.WriteLine(objId);
