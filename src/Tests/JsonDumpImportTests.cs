@@ -12,7 +12,7 @@ public class JsonDumpImportTests
     [Fact]
     public void FromJson_Creates_Objects_And_Fields_And_Assocs()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using (var session = new DbSession(env))
         {
@@ -57,7 +57,7 @@ public class JsonDumpImportTests
     [Fact]
     public void FromJson_Updates_Existing_Object_Instead_Of_Creating_Duplicate()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid fixedId;
 
@@ -90,7 +90,7 @@ public class JsonDumpImportTests
         }
 
         using var readSession = new DbSession(env, readOnly: true);
-        var loaded = readSession.GetObjFromGuid<TestingFolder>(fixedId).GetValueOrDefault();
+        var loaded = readSession.GetObjFromGuid<TestingFolder>(fixedId)!.Value;
         Assert.Equal("After", loaded.Name);
 
         var count = Searcher.Search<TestingFolder>(readSession).Count();
@@ -100,7 +100,7 @@ public class JsonDumpImportTests
     [Fact]
     public void FromJson_Removes_Missing_Fields_And_Assocs_To_Match_Json()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid aId;
         Guid bId;
@@ -144,7 +144,7 @@ public class JsonDumpImportTests
         }
 
         using var readSession = new DbSession(env, readOnly: true);
-        var aReloaded = readSession.GetObjFromGuid<TestingFolder>(aId).GetValueOrDefault();
+        var aReloaded = readSession.GetObjFromGuid<TestingFolder>(aId)!.Value;
 
         Assert.Equal("A", aReloaded.Name);
 

@@ -7,7 +7,7 @@ using Environment = Shared.Environment;
 //we still want to serialize / deserialize everything, so we get the exact same behaviour
 //but we don't want a direct dependency on the WebSocket in the ServerProcedures
 
-using var env = Environment.Create();
+using var env = Environment.CreateDatabase("clientDb");
 
 Logging.LogFlags = LogFlags.Error;
 

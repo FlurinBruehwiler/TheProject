@@ -11,7 +11,7 @@ public class HistoryTests
     [Fact]
     public void History_Commits_Can_Be_Enumerated()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid objId;
 
@@ -43,7 +43,7 @@ public class HistoryTests
     [Fact]
     public void History_Assoc_Add_And_Remove_Are_Recorded_On_Both_Sides()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid aId;
         Guid bId;
@@ -91,7 +91,7 @@ public class HistoryTests
     [Fact]
     public void History_Field_Delete_Is_Recorded_As_Defaulting()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid objId;
 
@@ -128,7 +128,7 @@ public class HistoryTests
     [Fact]
     public void History_Records_Field_Changes_For_All_Types()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid objId;
 
@@ -186,7 +186,7 @@ public class HistoryTests
     [Fact]
     public void History_Object_Delete_Records_Assoc_Removals_Without_Field_Noise()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid aId;
         Guid bId;
@@ -230,7 +230,7 @@ public class HistoryTests
     [Fact]
     public void History_Multiple_Changes_In_Single_Commit_Are_Recorded()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid aId;
         Guid bId;
@@ -282,7 +282,7 @@ public class HistoryTests
     [Fact]
     public void History_Last_Write_Wins_Within_A_Commit_For_A_Field()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         Guid objId;
 

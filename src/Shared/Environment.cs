@@ -15,9 +15,7 @@ public class Environment : IDisposable
     public required LightningDatabase FieldPresenceIndex;
     public required Guid ModelGuid;
 
-    //todo refactor this, too many methods doing the same thing!
-
-    public static Environment Create(string dbName = "database")
+    public static Environment CreateDatabase(string dbName, string dumpFile = "")
     {
         // NOTE: This is intentionally destructive and used by tests/dev.
         if (Directory.Exists(dbName))
@@ -25,13 +23,25 @@ public class Environment : IDisposable
             Directory.Delete(dbName, recursive: true);
         }
 
-        return OpenInternal(dbName, create: true);
-    }
+        var env = OpenInternal(dbName, create: true);
 
-    public static Environment Init(string dbName)
-    {
-        Directory.CreateDirectory(dbName);
-        return OpenInternal(dbName, create: true);
+        if (dumpFile != "")
+        {
+            using var session = new DbSession(env);
+            if (File.Exists(dumpFile))
+            {
+                var json = File.ReadAllText(dumpFile);
+                JsonDump.FromJson(json, env, session);
+                session.Commit();
+            }
+            else
+            {
+                //todo create helpers that read a file, and otherwise log
+                Logging.Log(LogFlags.Error, $"File {dumpFile} doesn't exist");
+            }
+        }
+
+        return env;
     }
 
     public static Environment Open(string dbDir)

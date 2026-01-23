@@ -1,4 +1,4 @@
-﻿namespace Tests;
+namespace Tests;
 
 [CollectionDefinition(DatabaseCollectionName)]
 public class DatabaseCollection : IClassFixture<DatabaseCollection>
@@ -18,5 +18,10 @@ public class DatabaseCollection : IClassFixture<DatabaseCollection>
     public static string GetTempDbDirectory()
     {
         return Path.Combine(TestDirectory, Guid.NewGuid().ToString("N"));
+    }
+
+    public static string GetTestModelDumpFile()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "testdata", "TestModelDump.json");
     }
 }

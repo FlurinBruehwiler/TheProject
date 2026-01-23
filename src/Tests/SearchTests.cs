@@ -20,7 +20,7 @@ public class SearchTests
     [InlineData(false)]
     public void Exact_String_Search(bool indexed)
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.Name, indexed);
@@ -59,7 +59,7 @@ public class SearchTests
     [InlineData(false)]
     public void Substring_Search(bool indexed)
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.Name, indexed);
@@ -89,7 +89,7 @@ public class SearchTests
     [Fact]
     public void Fuzzy_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 
@@ -119,7 +119,7 @@ public class SearchTests
     [Fact]
     public void Assoc_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 
@@ -160,7 +160,7 @@ public class SearchTests
     [Fact]
     public void Assoc_Parent_Null_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 
@@ -187,7 +187,7 @@ public class SearchTests
     [Fact]
     public void Assoc_Parent_NotNull_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 
@@ -214,7 +214,7 @@ public class SearchTests
     [Fact]
     public void Assoc_Subfolders_Null_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 
@@ -241,7 +241,7 @@ public class SearchTests
     [Fact]
     public void Assoc_Subfolders_NotNull_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 
@@ -268,7 +268,7 @@ public class SearchTests
     [Fact]
     public void Default_String_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.Name, true);
@@ -299,7 +299,7 @@ public class SearchTests
     [InlineData(false)]
     public void Default_Integer_Search(bool indexed)
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.TestIntegerField, indexed);
@@ -330,7 +330,7 @@ public class SearchTests
     [InlineData(false)]
     public void Default_Decimal_Search(bool indexed)
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.TestDecimalField, indexed);
@@ -361,7 +361,7 @@ public class SearchTests
     [InlineData(false)]
     public void Default_DateTime_Search(bool indexed)
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.TestDateField, indexed);
@@ -393,7 +393,7 @@ public class SearchTests
     {
         var boolFieldId = TestingFolder.Fields.TestBoolField;
 
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, boolFieldId, indexed);
 
@@ -421,7 +421,7 @@ public class SearchTests
     {
         var boolFieldId = TestingFolder.Fields.TestBoolField;
 
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, boolFieldId, indexed);
 
@@ -448,7 +448,7 @@ public class SearchTests
     [InlineData(false)]
     public void DateTime_Search(bool indexed)
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.TestDateField, indexed);
@@ -490,7 +490,7 @@ public class SearchTests
     [InlineData(false)]
     public void Decimal_Search(bool indexed)
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.TestDecimalField, indexed);
@@ -537,7 +537,7 @@ public class SearchTests
     [InlineData(false)]
     public void Integer_Search(bool indexed)
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
         SetFldIndexed(tsx, TestingFolder.Fields.TestIntegerField, indexed);
@@ -582,7 +582,7 @@ public class SearchTests
     [Fact]
     public void Type_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
         using var tsx = new DbSession(env);
 
         var folderA = new TestingFolder(tsx);
@@ -602,7 +602,7 @@ public class SearchTests
     [Fact]
     public void SubQuery_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 
@@ -646,7 +646,7 @@ public class SearchTests
     [Fact]
     public void LogicalAnd_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 
@@ -697,7 +697,7 @@ public class SearchTests
     [Fact]
     public void LogicalOr_Search()
     {
-        using var env = Environment.Create(dbName: DatabaseCollection.GetTempDbDirectory());
+        using var env = Environment.CreateDatabase(dbName: DatabaseCollection.GetTempDbDirectory(), dumpFile: DatabaseCollection.GetTestModelDumpFile());
 
         using var tsx = new DbSession(env);
 

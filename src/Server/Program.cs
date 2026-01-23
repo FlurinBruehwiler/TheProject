@@ -9,7 +9,7 @@ using Shared.Database;
 
 try
 {
-    using var env = Shared.Environment.Create();
+    using var env = Shared.Environment.CreateDatabase("testdb");
 
     Guid parentFolderObjId;
     Guid childObjId;

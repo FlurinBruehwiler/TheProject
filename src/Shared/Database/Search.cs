@@ -81,7 +81,7 @@ public static class Searcher
                     // Field is present (has a VAL entry).
                     txn.Put(environment.FieldPresenceIndex, fldId.AsSpan(), objId.AsSpan());
 
-                    var fld = session.GetObjFromGuid<FieldDefinition>(fldId).GetValueOrDefault();
+                    var fld = session.GetObjFromGuid<FieldDefinition>(fldId)!.Value;
                     if (fld.IsIndexed)
                     {
                         InsertIndex(Enum.Parse<FieldDataType>(fld.DataType), objId, fldId, dataValue, txn, environment);
@@ -106,7 +106,7 @@ public static class Searcher
     public static void UpdateSearchIndex(DbSession session, LightningTransaction txn, BPlusTree changeSet)
     {
         var environment = session.Environment;
-        var model = session.GetObjFromGuid<Model.Generated.Model>(environment.ModelGuid).GetValueOrDefault();
+        var model = session.GetObjFromGuid<Model.Generated.Model>(environment.ModelGuid)!.Value;
         var fieldsById = model.GetAllFieldDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
 
         var changeCursor = changeSet.CreateCursor();
@@ -456,7 +456,7 @@ public static class Searcher
         switch (searchCriterion)
         {
             case StringCriterion stringCriterion:
-                if (dbSession.GetObjFromGuid<FieldDefinition>(stringCriterion.FieldId).GetValueOrDefault().IsIndexed)
+                if (dbSession.GetObjFromGuid<FieldDefinition>(stringCriterion.FieldId)!.Value.IsIndexed)
                     return 0;
                 return 1000;
             case AssocCriterion assocCriterion:
@@ -465,21 +465,21 @@ public static class Searcher
 
                 return 50;
             case DateTimeCriterion dateTimeCriterion:
-                if (dbSession.GetObjFromGuid<FieldDefinition>(dateTimeCriterion.FieldId).GetValueOrDefault().IsIndexed)
+                if (dbSession.GetObjFromGuid<FieldDefinition>(dateTimeCriterion.FieldId)!.Value.IsIndexed)
                     return 0;
                 return 1000;
             case DecimalCriterion decimalCriterion:
-                if (dbSession.GetObjFromGuid<FieldDefinition>(decimalCriterion.FieldId).GetValueOrDefault().IsIndexed)
+                if (dbSession.GetObjFromGuid<FieldDefinition>(decimalCriterion.FieldId)!.Value.IsIndexed)
                     return 0;
                 return 1000;
             case IdCriterion:
                 return 0;
             case LongCriterion longCriterion:
-                if (dbSession.GetObjFromGuid<FieldDefinition>(longCriterion.FieldId).GetValueOrDefault().IsIndexed)
+                if (dbSession.GetObjFromGuid<FieldDefinition>(longCriterion.FieldId)!.Value.IsIndexed)
                     return 0;
                 return 1000;
             case BooleanCriterion booleanCriterion:
-                if (dbSession.GetObjFromGuid<FieldDefinition>(booleanCriterion.FieldId).GetValueOrDefault().IsIndexed)
+                if (dbSession.GetObjFromGuid<FieldDefinition>(booleanCriterion.FieldId)!.Value.IsIndexed)
                     return 0;
                 return 1000;
             default:
@@ -508,7 +508,7 @@ public static class Searcher
                     {
                         Span<byte> key = stackalloc byte[2 * 16];
                         MemoryMarshal.Write(key, objId);
-                        MemoryMarshal.Write(key.Slice(16), fld.GetValueOrDefault().OtherReferenceFields);
+                        MemoryMarshal.Write(key.Slice(16), fld!.Value.OtherReferenceFields);
 
                         if (cursor.SetRange(key) == MDBResultCode.Success)
                         {
@@ -540,7 +540,7 @@ public static class Searcher
             {
                 // Not indexed for now.
                 // Returns all objects of the owning entity where the association has no entries.
-                return ExecuteTypeSearch(env, transaction, Guid.Parse(fld.GetValueOrDefault().OwningEntity.Id), objId =>
+                return ExecuteTypeSearch(env, transaction, Guid.Parse(fld!.Value.OwningEntity.Id), objId =>
                 {
                     Span<byte> key = stackalloc byte[2 * 16];
                     MemoryMarshal.Write(key, objId);
@@ -564,7 +564,7 @@ public static class Searcher
             {
                 // Not indexed for now.
                 // Returns all objects of the owning entity where the association has at least one entry.
-                return ExecuteTypeSearch(env, transaction, Guid.Parse(fld.GetValueOrDefault().OwningEntity.Id), objId =>
+                return ExecuteTypeSearch(env, transaction, Guid.Parse(fld!.Value.OwningEntity.Id), objId =>
                 {
                     Span<byte> key = stackalloc byte[2 * 16];
                     MemoryMarshal.Write(key, objId);
@@ -621,9 +621,9 @@ public static class Searcher
             return true;
         }
 
-        if (!fld.GetValueOrDefault().IsIndexed)
+        if (!fld!.Value.IsIndexed)
         {
-            return ExecuteTypeSearch(dbSession.Environment, transaction, Guid.Parse(fld.GetValueOrDefault().OwningEntity.Id), (objId) =>
+            return ExecuteTypeSearch(dbSession.Environment, transaction, Guid.Parse(fld!.Value.OwningEntity.Id), (objId) =>
             {
                 if (MatchNonStringSearch(dbSession.Environment, transaction, objId, fieldId, from, to))
                 {
@@ -674,7 +674,7 @@ public static class Searcher
         if (!includesDefault)
             return true;
 
-        return AddMissingFieldValues(dbSession.Environment, transaction, Guid.Parse(fld.GetValueOrDefault().OwningEntity.Id), fieldId, seen!, addResult);
+        return AddMissingFieldValues(dbSession.Environment, transaction, Guid.Parse(fld!.Value.OwningEntity.Id), fieldId, seen!, addResult);
     }
 
     private static bool ExecuteTypeSearch(Environment environment, LightningTransaction transaction, Guid typId, Func<Guid, bool> addResult)
@@ -825,9 +825,9 @@ public static class Searcher
             return true;
         }
 
-        if (!fld.GetValueOrDefault().IsIndexed)
+        if (!fld!.Value.IsIndexed)
         {
-            return ExecuteTypeSearch(dbSession.Environment, transaction, Guid.Parse(fld.GetValueOrDefault().OwningEntity.Id), objId =>
+            return ExecuteTypeSearch(dbSession.Environment, transaction, Guid.Parse(fld!.Value.OwningEntity.Id), objId =>
             {
                 if (MatchBooleanCriterion(dbSession.Environment, transaction, objId, criterion))
                 {
@@ -865,7 +865,7 @@ public static class Searcher
 
         if (criterion.Value == false)
         {
-            return AddMissingFieldValues(dbSession.Environment, transaction, Guid.Parse(fld.GetValueOrDefault().OwningEntity.Id), criterion.FieldId, seen!, addResult);
+            return AddMissingFieldValues(dbSession.Environment, transaction, Guid.Parse(fld!.Value.OwningEntity.Id), criterion.FieldId, seen!, addResult);
         }
 
         return true;
@@ -875,9 +875,9 @@ public static class Searcher
     {
         var fld = dbSession.GetObjFromGuid<FieldDefinition>(criterion.FieldId);
 
-        if (!fld.GetValueOrDefault().IsIndexed)
+        if (!fld!.Value.IsIndexed)
         {
-            return ExecuteTypeSearch(dbSession.Environment, transaction, Guid.Parse(fld.GetValueOrDefault().OwningEntity.Id), (objId) =>
+            return ExecuteTypeSearch(dbSession.Environment, transaction, Guid.Parse(fld!.Value.OwningEntity.Id), (objId) =>
             {
                 if (MatchStringCriterion(dbSession.Environment, transaction, objId, criterion))
                 {
@@ -909,7 +909,7 @@ public static class Searcher
 
             if (strValue.Length == 0)
             {
-                return AddMissingFieldValues(dbSession.Environment, transaction, Guid.Parse(fld.GetValueOrDefault().OwningEntity.Id), criterion.FieldId, seen!, addResult);
+                return AddMissingFieldValues(dbSession.Environment, transaction, Guid.Parse(fld!.Value.OwningEntity.Id), criterion.FieldId, seen!, addResult);
             }
 
             return true;

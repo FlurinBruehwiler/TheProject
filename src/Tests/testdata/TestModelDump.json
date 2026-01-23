@@ -1,0 +1,107 @@
+{
+  "modelGuid": "77AF865C-5498-4938-BB2C-2530B158C0C0",
+  "entities": {
+    "77AF865C-5498-4938-BB2C-2530B158C0C0": {
+      "$type": "5270c4a5-71e0-4474-9f94-50745b29b404",
+      "Name": "TestModel",
+      "EntityDefinitions": [
+        "a3ccbd8b-2256-414b-a402-1a091cb407a5",
+        "e5184bba-f470-4bab-aeed-28fb907da349"
+      ]
+    },
+
+    "a3ccbd8b-2256-414b-a402-1a091cb407a5": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "TestingFolder",
+      "Name": "TestingFolder",
+      "Id": "a3ccbd8b-2256-414b-a402-1a091cb407a5",
+      "Model": "77AF865C-5498-4938-BB2C-2530B158C0C0",
+      "FieldDefinitions": [
+        "18696c7b-0b5d-406a-9f4c-f2e830cc0f55",
+        "19afb14d-e6e6-4ffa-947b-b4b861d0118e",
+        "25b2926a-e77d-4a1f-ba75-9d3c76ac7dd7",
+        "71d87fdd-7415-49cd-9204-44d43073df9d",
+        "d2f1f644-4a30-4f6e-9a3c-39d9e7b6a1e2"
+      ],
+      "ReferenceFieldDefinitions": [
+        "b40bd476-d9a3-4554-a2f6-4f7760c0ffe4",
+        "83a0ada7-ba53-4877-8262-bd47520eeac7"
+      ]
+    },
+
+    "e5184bba-f470-4bab-aeed-28fb907da349": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "TestingDocument",
+      "Name": "TestingDocument",
+      "Id": "e5184bba-f470-4bab-aeed-28fb907da349",
+      "Model": "77AF865C-5498-4938-BB2C-2530B158C0C0",
+      "FieldDefinitions": [],
+      "ReferenceFieldDefinitions": []
+    },
+
+    "18696c7b-0b5d-406a-9f4c-f2e830cc0f55": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Name",
+      "Name": "Name",
+      "Id": "18696c7b-0b5d-406a-9f4c-f2e830cc0f55",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "a3ccbd8b-2256-414b-a402-1a091cb407a5"
+    },
+    "19afb14d-e6e6-4ffa-947b-b4b861d0118e": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "TestDateField",
+      "Name": "TestDateField",
+      "Id": "19afb14d-e6e6-4ffa-947b-b4b861d0118e",
+      "DataType": "DateTime",
+      "IsIndexed": true,
+      "OwningEntity": "a3ccbd8b-2256-414b-a402-1a091cb407a5"
+    },
+    "25b2926a-e77d-4a1f-ba75-9d3c76ac7dd7": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "TestDecimalField",
+      "Name": "TestDecimalField",
+      "Id": "25b2926a-e77d-4a1f-ba75-9d3c76ac7dd7",
+      "DataType": "Decimal",
+      "IsIndexed": true,
+      "OwningEntity": "a3ccbd8b-2256-414b-a402-1a091cb407a5"
+    },
+    "71d87fdd-7415-49cd-9204-44d43073df9d": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "TestIntegerField",
+      "Name": "TestIntegerField",
+      "Id": "71d87fdd-7415-49cd-9204-44d43073df9d",
+      "DataType": "Integer",
+      "IsIndexed": true,
+      "OwningEntity": "a3ccbd8b-2256-414b-a402-1a091cb407a5"
+    },
+    "d2f1f644-4a30-4f6e-9a3c-39d9e7b6a1e2": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "TestBoolField",
+      "Name": "TestBoolField",
+      "Id": "d2f1f644-4a30-4f6e-9a3c-39d9e7b6a1e2",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "a3ccbd8b-2256-414b-a402-1a091cb407a5"
+    },
+
+    "b40bd476-d9a3-4554-a2f6-4f7760c0ffe4": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Subfolders",
+      "Name": "Subfolders",
+      "Id": "b40bd476-d9a3-4554-a2f6-4f7760c0ffe4",
+      "RefType": "Multiple",
+      "OwningEntity": "a3ccbd8b-2256-414b-a402-1a091cb407a5",
+      "OtherReferenceFields": "83a0ada7-ba53-4877-8262-bd47520eeac7"
+    },
+    "83a0ada7-ba53-4877-8262-bd47520eeac7": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Parent",
+      "Name": "Parent",
+      "Id": "83a0ada7-ba53-4877-8262-bd47520eeac7",
+      "RefType": "SingleOptional",
+      "OwningEntity": "a3ccbd8b-2256-414b-a402-1a091cb407a5",
+      "OtherReferenceFields": "b40bd476-d9a3-4554-a2f6-4f7760c0ffe4"
+    }
+  }
+}

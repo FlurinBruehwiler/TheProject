@@ -415,25 +415,29 @@ public sealed class DbSession : IDisposable
 
     public T? GetObjFromGuid<T>(Guid objId) where T : struct, ITransactionObject
     {
-        //todo
-        //i'm not sure if this function is at the right place....
-        //we should also validate that this object exists and has the right type
-        return new T
+        if (TryGetObjFromGuid<T>(objId, out var val))
         {
-            ObjId = objId,
-            DbSession = this
-        };
+            return val;
+        }
+
+        return null;
     }
 
     public bool TryGetObjFromGuid<T>(Guid objId, out T val) where T : ITransactionObject, new()
     {
-        //todo
-        val = new T
+        val = default!;
+
+        if (GetTypId(objId) == T.TypId) //todo handle inheritance
         {
-            ObjId = objId,
-            DbSession = this
-        };
-        return true;
+            val = new T
+            {
+                ObjId = objId,
+                DbSession = this
+            };
+            return true;
+        }
+
+        return false;
     }
 }
 

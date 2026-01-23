@@ -22,6 +22,7 @@ public static class JsonDump
         {
             writer.WriteStartObject();
 
+            writer.WriteString("modelGuid", env.ModelGuid);
             writer.WritePropertyName("entities");
             writer.WriteStartObject();
 
@@ -94,6 +95,9 @@ public static class JsonDump
             throw new InvalidOperationException("DbSession is read-only");
 
         using var doc = JsonDocument.Parse(json);
+
+        var modelGuid = doc.RootElement.GetProperty("modelGuid").GetGuid();
+        env.ModelGuid = modelGuid;
 
         if (!doc.RootElement.TryGetProperty("entities", out var entities) || entities.ValueKind != JsonValueKind.Object)
             return;

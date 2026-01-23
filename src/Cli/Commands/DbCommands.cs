@@ -28,7 +28,7 @@ public static class DbCommands
                 Directory.Delete(resolvedDb, recursive: true);
             }
 
-            using var _ = Environment.Init(resolvedDb);
+            using var _ = Environment.CreateDatabase(resolvedDb);
 
             Console.WriteLine($"Initialized database at '{resolvedDb}'.");
         }, CliOptions.Db, forceOption);
