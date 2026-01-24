@@ -26,14 +26,17 @@ public class Environment : IDisposable
 
         var env = OpenInternal(dbName, create: true);
 
+        InsertBaseModel(env);
+        
         if (dumpFile != "")
         {
             using var session = new DbSession(env);
             if (File.Exists(dumpFile))
             {
                 var json = File.ReadAllText(dumpFile);
-                JsonDump.FromJson(json, session);
+                var modelGuid = JsonDump.FromJson(json, session);
                 session.Commit();
+                env.ModelGuid = modelGuid;
             }
             else
             {
@@ -112,9 +115,7 @@ public class Environment : IDisposable
             FieldPresenceIndex = fieldPresenceIndex,
             ModelGuid = Guid.Empty //todo
         };
-
-        InsertBaseModel(env);
-
+        
         return env;
     }
 

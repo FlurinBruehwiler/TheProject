@@ -26,7 +26,7 @@ public static class DbDumpJsonCommand
             using var env = Environment.Open(resolvedDb);
             using var session = new DbSession(env, readOnly: true);
 
-            var json = JsonDump.GetJsonDump(env, session);
+            var json = JsonDump.GetJsonDump(session);
 
             if (outFile is null)
             {

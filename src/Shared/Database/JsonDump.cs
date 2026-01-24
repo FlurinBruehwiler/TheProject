@@ -12,9 +12,9 @@ namespace Shared.Database;
 
 public static class JsonDump
 {
-    public static string GetJsonDump(Environment env, DbSession dbSession)
+    public static string GetJsonDump(DbSession dbSession)
     {
-        var model = dbSession.GetObjFromGuid<Model.Generated.Model>(env.ModelGuid);
+        var model = dbSession.GetObjFromGuid<Model.Generated.Model>(dbSession.Environment.ModelGuid);
         var entityById = model!.Value.GetAllEntityDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
 
         using var stream = new MemoryStream();
@@ -22,7 +22,7 @@ public static class JsonDump
         {
             writer.WriteStartObject();
 
-            writer.WriteString("modelGuid", env.ModelGuid);
+            writer.WriteString("modelGuid", dbSession.Environment.ModelGuid);
             writer.WritePropertyName("entities");
             writer.WriteStartObject();
 
@@ -89,7 +89,7 @@ public static class JsonDump
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    public static void FromJson(string json, DbSession dbSession)
+    public static Guid FromJson(string json, DbSession dbSession)
     {
         if (dbSession.IsReadOnly)
             throw new InvalidOperationException("DbSession is read-only");
@@ -99,23 +99,32 @@ public static class JsonDump
         var modelGuid = doc.RootElement.GetProperty("modelGuid").GetGuid();
 
         if (!doc.RootElement.TryGetProperty("entities", out var entities) || entities.ValueKind != JsonValueKind.Object)
-            return;
+            return modelGuid;
 
         // Pass 1: ensure all objects exist, and types match.
         foreach (var entityProp in entities.EnumerateObject())
         {
             if (!Guid.TryParse(entityProp.Name, out var objId))
+            {
+                Logging.Log(LogFlags.Error, $"Expected Guid, but was {objId}");
                 continue;
+            }
 
             var entityJson = entityProp.Value;
             if (entityJson.ValueKind != JsonValueKind.Object)
+            {
+                Logging.Log(LogFlags.Error, $"Expected Object, but was {entityJson.ValueKind}");
                 continue;
+            }
 
             if (!entityJson.TryGetProperty("$type", out var typeProp) || typeProp.ValueKind != JsonValueKind.String)
                 continue;
 
             if (!Guid.TryParse(typeProp.GetString(), out var typId))
+            {
+                Logging.Log(LogFlags.Error, $"Expected Guid, but was {typeProp.GetString()}");
                 continue;
+            }
 
             var existingTyp = dbSession.GetTypId(objId);
             if (existingTyp == Guid.Empty)
@@ -132,15 +141,23 @@ public static class JsonDump
         var model = dbSession.GetObjFromGuid<Model.Generated.Model>(dbSession.Environment.ModelGuid);
         var entityById = model!.Value.GetAllEntityDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
 
+        //TODO: better error handling
+        
         // Pass 2: set fields and associations.
         foreach (var entityProp in entities.EnumerateObject())
         {
             if (!Guid.TryParse(entityProp.Name, out var objId))
+            {
+                Logging.Log(LogFlags.Error, $"Expected Guid, but was {entityProp.Name}");
                 continue;
+            }
 
             var entityJson = entityProp.Value;
             if (entityJson.ValueKind != JsonValueKind.Object)
+            {
+                Logging.Log(LogFlags.Error, $"Expected Object, but was {entityJson.ValueKind}");
                 continue;
+            }
 
             if (!entityJson.TryGetProperty("$type", out var typeProp) || typeProp.ValueKind != JsonValueKind.String)
                 continue;
@@ -155,6 +172,18 @@ public static class JsonDump
             if (dbSession.GetTypId(objId) != typId)
                 continue;
 
+            //check that all properties are correct
+            foreach (var jsonProperty in entityJson.EnumerateObject())
+            {
+                if (jsonProperty.NameEquals("$type"))
+                    continue;
+
+                if (entity.FieldDefinitions.All(x => x.Key != jsonProperty.Name) && entity.ReferenceFieldDefinitions.All(x => x.Key != jsonProperty.Name))
+                {
+                    Logging.Log(LogFlags.Info, $"There is no field with the key {jsonProperty.Name} on the type {entity.Key}"); //todo inheritance   
+                }
+            }
+            
             foreach (var field in entity.FieldDefinitions)
             {
                 if (entityJson.TryGetProperty(field.Key, out var value))
@@ -212,6 +241,8 @@ public static class JsonDump
                 }
             }
         }
+
+        return modelGuid;
     }
 
     private static void CreateObjWithId(DbSession dbSession, Guid objId, Guid typId)
@@ -249,8 +280,7 @@ public static class JsonDump
                 }
 
                 var s = value.GetString() ?? string.Empty;
-                var bytes = Encoding.Unicode.GetBytes(s);
-                dbSession.SetFldValue(objId, fldId, bytes);
+                dbSession.SetFldValue(objId, fldId, MemoryMarshal.Cast<char, byte>(s.AsSpan()));
                 return;
             }
             case FieldDataType.Integer:

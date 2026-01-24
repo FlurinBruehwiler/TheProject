@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Shared;
@@ -29,6 +30,9 @@ public static class Logging
     //todo structured logging
     public static void Log(LogFlags logFlags, [InterpolatedStringHandlerArgument("logFlags")] LogInterpolatedStringHandler message)
     {
+        if ((logFlags & LogFlags.Error) != 0)
+            Debugger.Break();
+        
         if ((LogFlags & logFlags) != 0)
         {
             Console.WriteLine(message.GetFormattedText());

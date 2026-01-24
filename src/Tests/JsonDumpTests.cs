@@ -33,7 +33,7 @@ public class JsonDumpTests
         }
 
         using var readSession = new DbSession(env, readOnly: true);
-        var json = JsonDump.GetJsonDump(env, readSession);
+        var json = JsonDump.GetJsonDump(readSession);
 
         using var doc = JsonDocument.Parse(json);
         var entity = GetEntity(doc, objId);
@@ -69,7 +69,7 @@ public class JsonDumpTests
         }
 
         using var readSession = new DbSession(env, readOnly: true);
-        var json = JsonDump.GetJsonDump(env, readSession);
+        var json = JsonDump.GetJsonDump(readSession);
 
         using var doc = JsonDocument.Parse(json);
 
@@ -103,7 +103,7 @@ public class JsonDumpTests
         }
 
         using var readSession = new DbSession(env, readOnly: true);
-        var json = JsonDump.GetJsonDump(env, readSession);
+        var json = JsonDump.GetJsonDump(readSession);
 
         using var doc = JsonDocument.Parse(json);
         var entity = GetEntity(doc, objId);

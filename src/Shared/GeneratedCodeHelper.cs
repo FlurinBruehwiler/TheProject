@@ -134,7 +134,12 @@ public struct AssocCollection<T> : ICollection<T> where T : struct, ITransaction
 
     public void CopyTo(T[] array, int arrayIndex)
     {
-        throw new NotImplementedException();
+        var i = arrayIndex;
+        foreach (var t in this)
+        {
+            array[i] = t;
+            i++;
+        }
     }
 
     public bool Remove(T item)

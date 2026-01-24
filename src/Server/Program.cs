@@ -47,7 +47,7 @@ try
 
         tsx.Commit();
 
-        Console.WriteLine(JsonDump.GetJsonDump(env, tsx));
+        Console.WriteLine(JsonDump.GetJsonDump(tsx));
     }
 }
 catch (Exception e)

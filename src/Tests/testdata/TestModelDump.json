@@ -2,7 +2,7 @@
   "modelGuid": "77AF865C-5498-4938-BB2C-2530B158C0C0",
   "entities": {
     "77AF865C-5498-4938-BB2C-2530B158C0C0": {
-      "$type": "5270c4a5-71e0-4474-9f94-50745b29b404",
+      "$type": "5739AE0D-E179-4D46-BAE2-081F99D699DA",
       "Name": "TestModel",
       "EntityDefinitions": [
         "a3ccbd8b-2256-414b-a402-1a091cb407a5",

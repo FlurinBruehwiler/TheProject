@@ -508,7 +508,7 @@ public static class Searcher
                     {
                         Span<byte> key = stackalloc byte[2 * 16];
                         MemoryMarshal.Write(key, objId);
-                        MemoryMarshal.Write(key.Slice(16), fld!.Value.OtherReferenceFields);
+                        MemoryMarshal.Write(key.Slice(16), fld!.Value.OtherReferenceFields.ObjId);
 
                         if (cursor.SetRange(key) == MDBResultCode.Success)
                         {

@@ -7,7 +7,7 @@ namespace SourceGen;
 
 public static class ModelGenerator
 {
-    public static void Generate(Model.Generated.Model model)
+    public static void Generate(Model.Generated.Model model, string targetDir)
     {
         foreach (var entity in model.EntityDefinitions)
         {
@@ -155,7 +155,7 @@ public static class ModelGenerator
             sourceBuilder.RemoveIndent();
             sourceBuilder.AppendLine("}");
 
-            var generatedPath = Path.Combine(Helper.GetRootDir(), "../Shared/Generated", $"{entity.Key}.cs");
+            var generatedPath = Path.Combine(targetDir, $"{entity.Key}.cs");
             File.WriteAllText(generatedPath, sourceBuilder.ToString());
         }
     }

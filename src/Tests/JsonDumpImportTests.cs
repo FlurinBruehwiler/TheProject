@@ -15,17 +15,30 @@ public class JsonDumpImportTests
         using (var session = new DbSession(env))
         {
             var json = File.ReadAllText("testdata/TestModelDump.json");
-            JsonDump.FromJson(json, session);
-
+            var modelGuid = JsonDump.FromJson(json, session);
             session.Commit();
+            env.ModelGuid = modelGuid;
         }
 
         using var readSession = new DbSession(env, readOnly: true);
 
-        var obj = readSession.GetObjFromGuid<EntityDefinition>(Guid.Parse("a3ccbd8b-2256-414b-a402-1a091cb407a5"));
-
-        Assert.NotNull(obj);
-        Assert.Equal("TestingFolder", obj.Value.Name);
+        var model = readSession.GetObjFromGuid<Model.Generated.Model>(env.ModelGuid);
+        Assert.NotNull(model);
+        Assert.Equal("TestModel", model.Value.Name);
+        
+        var testingDocument = readSession.GetObjFromGuid<EntityDefinition>(Guid.Parse("e5184bba-f470-4bab-aeed-28fb907da349"));
+        Assert.NotNull(testingDocument);
+        Assert.Equal("TestingDocument", testingDocument.Value.Name);
+        Assert.Equal("TestingDocument", testingDocument.Value.Key);
+        Assert.Equal("e5184bba-f470-4bab-aeed-28fb907da349", testingDocument.Value.Id);
+        Assert.Equal(model, testingDocument.Value.Model);
+        
+        var testingFolder = readSession.GetObjFromGuid<EntityDefinition>(Guid.Parse("a3ccbd8b-2256-414b-a402-1a091cb407a5"));
+        Assert.NotNull(testingFolder);
+        Assert.Equal("TestingFolder", testingFolder.Value.Name);
+        Assert.Equal("a3ccbd8b-2256-414b-a402-1a091cb407a5", testingFolder.Value.Id);
+        Assert.Equal(model, testingFolder.Value.Model);
+        Assert.Equal("TestingFolder", testingFolder.Value.Key);
     }
 
     [Fact]
