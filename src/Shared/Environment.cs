@@ -110,7 +110,7 @@ public class Environment : IDisposable
             StringSearchIndex = stringSearchIndex,
             NonStringSearchIndex = nonStringSearchIndex,
             FieldPresenceIndex = fieldPresenceIndex,
-            ModelGuid = Guid.NewGuid() //todo
+            ModelGuid = Guid.Empty //todo
         };
 
         InsertBaseModel(env);
@@ -124,13 +124,14 @@ public class Environment : IDisposable
 
         // Stable id for the built-in base model instance.
         var baseModelId = Guid.Parse("5270c4a5-71e0-4474-9f94-50745b29b404");
+        environment.ModelGuid = baseModelId;
 
         // If it's already present, do nothing.
         if (session.GetTypId(baseModelId) != Guid.Empty)
             return;
 
         // Entity ids (and also the TypIds for their corresponding objects)
-        var typModel = Guid.Parse("5270c4a5-71e0-4474-9f94-50745b29b404");
+        var typModel = Guid.Parse("5739AE0D-E179-4D46-BAE2-081F99D699DA");
         var typEntityDefinition = Guid.Parse("c15f876f-4f74-4034-9acb-03bc3b521e81");
         var typFieldDefinition = Guid.Parse("42a6f33d-a938-4ad8-9682-aabdc92a53d2");
         var typReferenceFieldDefinition = Guid.Parse("2147ed0f-b37d-4429-a3f8-8312c1620383");

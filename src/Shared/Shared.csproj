@@ -16,11 +16,6 @@
 
 
   <ItemGroup>
-    <Folder Include="Networking\" />
-  </ItemGroup>
-
-
-  <ItemGroup>
     <None Remove="Dumps\BaseModel.json" />
     <EmbeddedResource Include="Dumps\BaseModel.json" />
   </ItemGroup>

@@ -160,7 +160,7 @@ public static class ModelGenerator
         }
     }
 
-    private static string GetGuidLiteral(string g)
+    public static string GetGuidLiteral(string g)
     {
         var guid = Guid.Parse(g);
         Span<byte> guidData = stackalloc byte[16];

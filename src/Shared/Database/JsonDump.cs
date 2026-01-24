@@ -97,7 +97,6 @@ public static class JsonDump
         using var doc = JsonDocument.Parse(json);
 
         var modelGuid = doc.RootElement.GetProperty("modelGuid").GetGuid();
-        dbSession.Environment.ModelGuid = modelGuid; //todo, is this good?
 
         if (!doc.RootElement.TryGetProperty("entities", out var entities) || entities.ValueKind != JsonValueKind.Object)
             return;
@@ -132,7 +131,6 @@ public static class JsonDump
 
         var model = dbSession.GetObjFromGuid<Model.Generated.Model>(dbSession.Environment.ModelGuid);
         var entityById = model!.Value.GetAllEntityDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
-
 
         // Pass 2: set fields and associations.
         foreach (var entityProp in entities.EnumerateObject())
