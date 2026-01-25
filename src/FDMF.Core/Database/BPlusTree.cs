@@ -110,6 +110,9 @@ public sealed class BPlusTree
     private readonly int _branchingFactor;
     private readonly KeyComparer _compare;
     private Node _root;
+    private int _version;
+
+    internal int Version => _version;
 
     public BPlusTree(int branchingFactor = 32, KeyComparer? comparer = null)
     {
@@ -125,6 +128,7 @@ public sealed class BPlusTree
     public void Clear()
     {
         _root = new LeafNode();
+        _version++;
     }
 
     // public ResultCode Put(byte[] key, byte[] value)
@@ -150,6 +154,7 @@ public sealed class BPlusTree
             _root = newRoot;
         }
 
+        _version++;
         return ResultCode.Success;
     }
 
@@ -166,6 +171,8 @@ public sealed class BPlusTree
             _root.ParentIndex = 0;
         }
 
+        if (removed)
+            _version++;
         return removed ? ResultCode.Success : ResultCode.NotFound;
     }
 
@@ -445,55 +452,57 @@ public sealed class BPlusTree
         private int _index;
         private bool _valid;
 
+        private int _seenVersion;
+        private byte[]? _rangeKey;
+        private byte[]? _lastKey;
+
         public Cursor(BPlusTree tree)
         {
             _tree = tree;
+            _seenVersion = tree.Version;
         }
 
         public ResultCode SetRange(ReadOnlySpan<byte> inputKey)
         {
+            _rangeKey = inputKey.ToArray();
+            _lastKey = null;
             (_leaf, _index, _valid) = _tree.FindFirstAtOrAfter(inputKey);
+            _seenVersion = _tree.Version;
             return _valid ? ResultCode.Success : ResultCode.NotFound;
         }
 
         public CursorResult GetCurrent()
         {
+            RefreshIfStale();
             if (!_valid || _leaf == null)
                 return new CursorResult(ResultCode.NotFound, ReadOnlySpan<byte>.Empty, ReadOnlySpan<byte>.Empty);
 
+            _lastKey = _leaf.Keys[_index].Span.ToArray();
             return new CursorResult(ResultCode.Success, _leaf.Keys[_index].Span, _leaf.Values[_index].Span);
         }
 
         public CursorResult Next()
         {
+            RefreshIfStale();
             if (!_valid || _leaf == null)
                 return new CursorResult(ResultCode.NotFound, ReadOnlySpan<byte>.Empty, ReadOnlySpan<byte>.Empty);
 
-            _index++;
-            if (_index < _leaf.Keys.Count)
-                return GetCurrent();
+            // If the caller never called GetCurrent(), anchor from the current position.
+            _lastKey ??= _leaf.Keys[_index].Span.ToArray();
 
-            var nextLeaf = _leaf.Next;
-            while (nextLeaf != null && nextLeaf.Keys.Count == 0)
-            {
-                nextLeaf = nextLeaf.Next;
-            }
+            (_leaf, _index, _valid) = _tree.FindFirstAfter(_lastKey);
+            _seenVersion = _tree.Version;
 
-            if (nextLeaf == null)
-            {
-                _valid = false;
-                _leaf = null;
-                _index = 0;
+            if (!_valid || _leaf == null)
                 return new CursorResult(ResultCode.NotFound, ReadOnlySpan<byte>.Empty, ReadOnlySpan<byte>.Empty);
-            }
 
-            _leaf = nextLeaf;
-            _index = 0;
-            return GetCurrent();
+            _lastKey = _leaf.Keys[_index].Span.ToArray();
+            return new CursorResult(ResultCode.Success, _leaf.Keys[_index].Span, _leaf.Values[_index].Span);
         }
 
         public ResultCode Delete()
         {
+            RefreshIfStale();
             if (!_valid || _leaf == null)
                 return ResultCode.NotFound;
 
@@ -501,6 +510,10 @@ public sealed class BPlusTree
 
             leaf.Keys.RemoveAt(_index);
             leaf.Values.RemoveAt(_index);
+
+            _tree._version++;
+            _seenVersion = _tree.Version;
+            _lastKey = null;
 
             if (leaf.Keys.Count == 0)
             {
@@ -553,6 +566,50 @@ public sealed class BPlusTree
             _valid = true;
             return ResultCode.Success;
         }
+
+        private void RefreshIfStale()
+        {
+            if (_seenVersion == _tree.Version)
+                return;
+
+            ReadOnlySpan<byte> seek = default;
+            if (_lastKey != null)
+                seek = _lastKey;
+            else if (_rangeKey != null)
+                seek = _rangeKey;
+
+            if (seek.Length != 0)
+                (_leaf, _index, _valid) = _tree.FindFirstAtOrAfter(seek);
+
+            _seenVersion = _tree.Version;
+        }
+    }
+
+    private (LeafNode? leaf, int index, bool found) FindFirstAfter(ReadOnlySpan<byte> key)
+    {
+        var (leaf, index, found) = FindFirstAtOrAfter(key);
+        if (!found || leaf == null)
+            return (null, 0, false);
+
+        // FindFirstAtOrAfter gives >=. Advance one if it is ==.
+        if (_compare(leaf.Keys[index].Span, key) == 0)
+        {
+            index++;
+            while (leaf != null)
+            {
+                while (index < leaf.Keys.Count)
+                    return (leaf, index, true);
+
+                leaf = leaf.Next;
+                while (leaf != null && leaf.Keys.Count == 0)
+                    leaf = leaf.Next;
+                index = 0;
+            }
+
+            return (null, 0, false);
+        }
+
+        return (leaf, index, true);
     }
 
     private (LeafNode? leaf, int index, bool found) FindFirstAtOrAfter(ReadOnlySpan<byte> key)

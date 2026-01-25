@@ -102,7 +102,7 @@ public static class JsonDump
         if (!doc.RootElement.TryGetProperty("entities", out var entities) || entities.ValueKind != JsonValueKind.Object)
             return modelGuid;
 
-        // Pass 1: ensure all objects exist, and types match.
+        // Pass 1, so: ensure all objects exist, and types match.
         foreach (var entityProp in entities.EnumerateObject())
         {
             if (!Guid.TryParse(entityProp.Name, out var objId))

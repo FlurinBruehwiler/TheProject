@@ -43,9 +43,9 @@ public sealed class DbSession : IDisposable
     public Arena Arena;
     public bool IsReadOnly { get; }
 
-    public DbSession(Environment environment, bool readOnly = false)
+    public DbSession(Environment environment, bool readOnly = false, int arenaSize = 100_000)
     {
-        Arena = new Arena(100_000);
+        Arena = new Arena(arenaSize);
         Store = new TransactionalKvStore(environment.LightningEnvironment, environment.ObjectDb, Arena, readOnly: readOnly);
         Cursor = Store.CreateCursor();
         Environment = environment;

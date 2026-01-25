@@ -196,6 +196,35 @@ public class BPlusTreeTests
     }
 
     [Fact]
+    public void Cursor_Remains_Stable_When_Put_Splits_Current_Leaf()
+    {
+        var tree = new BPlusTree(branchingFactor: 3);
+
+        tree.Put(B(1), B(10));
+        tree.Put(B(2), B(20));
+        tree.Put(B(3), B(30));
+
+        var cursor = tree.CreateCursor();
+        Assert.Equal(ResultCode.Success, cursor.SetRange(B(3)));
+        AssertBytes.Equal(B(3), cursor.GetCurrent().Key);
+
+        // This insert forces a split in the same leaf that currently contains key=3.
+        tree.Put(B(4), B(40));
+
+        // Before the fix, this could throw due to cursor index pointing past leaf.Keys.Count.
+        var current = cursor.GetCurrent();
+        Assert.Equal(ResultCode.Success, current.ResultCode);
+        AssertBytes.Equal(B(3), current.Key);
+
+        var next = cursor.Next();
+        Assert.Equal(ResultCode.Success, next.ResultCode);
+        AssertBytes.Equal(B(4), next.Key);
+        AssertBytes.Equal(B(40), next.Value);
+
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+    }
+
+    [Fact]
     public void Delete()
     {
         var tree = new BPlusTree();

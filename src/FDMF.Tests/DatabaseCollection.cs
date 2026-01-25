@@ -24,4 +24,9 @@ public class DatabaseCollection : IClassFixture<DatabaseCollection>
     {
         return Path.Combine(AppContext.BaseDirectory, "testdata", "TestModelDump.json");
     }
+
+    public static string GetBusinessModelDumpFile()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "testdata", "BusinessModelDump.json");
+    }
 }

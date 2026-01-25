@@ -30,7 +30,9 @@ public class Environment : IDisposable
         
         if (dumpFile != "")
         {
-            using var session = new DbSession(env);
+            // Importing a dump can be large; use a larger arena so the initial commit
+            // (history/search index) has enough space.
+            using var session = new DbSession(env, arenaSize: 5_000_000);
             if (File.Exists(dumpFile))
             {
                 var json = File.ReadAllText(dumpFile);

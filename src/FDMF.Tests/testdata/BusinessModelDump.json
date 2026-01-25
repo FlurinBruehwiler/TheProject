@@ -1,0 +1,727 @@
+{
+  "modelGuid": "e166943a-b841-4523-a513-8cb9510dea7e",
+  "entities": {
+    "e166943a-b841-4523-a513-8cb9510dea7e": {
+      "$type": "5739AE0D-E179-4D46-BAE2-081F99D699DA",
+      "Name": "BusinessModel",
+      "EntityDefinitions": [
+        "cd030f9b-24ed-4792-a48d-c187939cae85",
+        "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+        "81daacd7-4b3f-44bf-b73c-52c7012ad758",
+        "3777d451-b036-4772-9358-5a67ab44763b",
+        "3c498c35-ec98-4705-9c3e-442588838f4e",
+        "30561d20-43d6-435d-a5db-9f151b3ec970",
+        "8a047a4b-d907-46c7-8d27-1c8b04ceae77",
+        "84070119-dce8-46a2-b181-bc98cc33df58"
+      ]
+    },
+    "cd030f9b-24ed-4792-a48d-c187939cae85": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "BusinessCase",
+      "Name": "BusinessCase",
+      "Id": "cd030f9b-24ed-4792-a48d-c187939cae85",
+      "Model": "e166943a-b841-4523-a513-8cb9510dea7e",
+      "FieldDefinitions": [
+        "2a743537-6e95-4ec3-8422-be79838b7bd5",
+        "24c95c72-2331-4b22-ad50-d6924265f009",
+        "d1576aac-1e5e-4832-93ed-d912b4911f02",
+        "b51f1c43-9fb0-4e79-99bd-041a69e95346",
+        "0c52f663-a159-4e40-91e4-f7327b13e793",
+        "f2284a04-897d-44da-a3f2-ed06d75f67b0"
+      ],
+      "ReferenceFieldDefinitions": [
+        "7ced3833-3857-4846-9ffb-b2acea9fb9f3",
+        "6af1eef1-4b48-478e-b3f4-d2634edb0f7a",
+        "5163b291-34a1-4849-85ff-3c71d356b43f",
+        "6bc1dd86-abde-4108-9e94-48c4ec85b6bf"
+      ]
+    },
+    "40d51f0a-31f0-4a04-9d16-77f454fd914e": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "Document",
+      "Name": "Document",
+      "Id": "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+      "Model": "e166943a-b841-4523-a513-8cb9510dea7e",
+      "FieldDefinitions": [
+        "3d50a185-4c99-43ab-9e18-0398aedbfa49",
+        "542d76bd-5a9d-450c-8eda-d4a76eba4b58",
+        "e9783281-dcd3-4031-a5ed-a1ed13bbad24",
+        "a9b59ad3-d030-49f6-b939-159d78d27461",
+        "a978a147-ab06-40e0-86b6-268f7f7fb3c1",
+        "885cd140-64f5-478f-a42c-2bea6aceaf3b"
+      ],
+      "ReferenceFieldDefinitions": [
+        "2df0f6aa-582d-4daf-89a1-def70bf75aed",
+        "637a1b99-0ccd-4eb4-9915-630170bf03c5",
+        "25627768-6f43-4230-86bb-ffc1c57446be",
+        "5d7c1847-2984-4c4d-9a08-b2aa0e772bb1",
+        "cc315293-3eac-476a-8480-de499673f608",
+        "35cfa966-9d9f-434f-95a7-507bb313f26f",
+        "3f0771ed-7629-495c-bff2-5b8d3939f169"
+      ]
+    },
+    "81daacd7-4b3f-44bf-b73c-52c7012ad758": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "OrganizationalUnit",
+      "Name": "OrganizationalUnit",
+      "Id": "81daacd7-4b3f-44bf-b73c-52c7012ad758",
+      "Model": "e166943a-b841-4523-a513-8cb9510dea7e",
+      "FieldDefinitions": [
+        "88bc11c2-903d-4517-b079-4f3fc5ce20b9",
+        "26d197fc-716e-4377-83a0-93e134f33b8c"
+      ],
+      "ReferenceFieldDefinitions": [
+        "77e01c0c-f7a4-47e8-b996-3790d2f601f6",
+        "c1e8b920-cd17-40b1-8785-ea2d9ca84b59",
+        "f86ce70e-57df-4056-8ff2-9cc0f6af444e",
+        "6b06a7d3-2c1a-4482-a7f0-271154f15229",
+        "2157a52c-8270-45ed-a05d-5b387829b376"
+      ]
+    },
+    "3777d451-b036-4772-9358-5a67ab44763b": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "User",
+      "Name": "User",
+      "Id": "3777d451-b036-4772-9358-5a67ab44763b",
+      "Model": "e166943a-b841-4523-a513-8cb9510dea7e",
+      "FieldDefinitions": [
+        "105daf0f-6978-4dcb-bd64-a78a1a36b2c4",
+        "46be95ae-0738-4c18-ae24-51a97b649a51",
+        "46135953-da64-4c2c-8fd6-b8618c11cec0",
+        "76440653-66af-4c24-b3f8-80f39afe52a6",
+        "9b76cfbf-e9b5-41db-b655-b496fca80732"
+      ],
+      "ReferenceFieldDefinitions": [
+        "ca5cc6fa-8006-42a0-a85d-8e1c081f9be6",
+        "3ec3c42b-98ea-48dd-8835-01863be885a5",
+        "d53ecf20-65c1-4f44-8e3a-fcec2bf26f52",
+        "7c857219-3363-4183-9746-cca341d0c5f4"
+      ]
+    },
+    "3c498c35-ec98-4705-9c3e-442588838f4e": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "Session",
+      "Name": "Session",
+      "Id": "3c498c35-ec98-4705-9c3e-442588838f4e",
+      "Model": "e166943a-b841-4523-a513-8cb9510dea7e",
+      "FieldDefinitions": [
+        "7c8e8231-f6ed-4738-9a02-c3855d262cde",
+        "7adfd10f-1b04-464f-81e3-875fc5148f1d",
+        "7b73f645-1d83-4632-9f2a-c1dc6f982e43",
+        "0364620f-0b33-441e-85fe-0272149b1a87"
+      ],
+      "ReferenceFieldDefinitions": [
+        "7aff7bdb-743e-4ff9-abdd-936839cc72d9",
+        "9d376b51-f16b-4269-b08b-8c9e948237c2"
+      ]
+    },
+    "30561d20-43d6-435d-a5db-9f151b3ec970": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "AgendaItem",
+      "Name": "AgendaItem",
+      "Id": "30561d20-43d6-435d-a5db-9f151b3ec970",
+      "Model": "e166943a-b841-4523-a513-8cb9510dea7e",
+      "FieldDefinitions": [
+        "9fc27b47-1962-4fa0-aca2-a7eb970aa22d",
+        "1199121d-bc49-4963-9327-f3f6855fe4b3",
+        "9afad796-18ca-44ab-a0ad-2b2a84c03de7",
+        "2cf80089-0848-47d3-b940-680440beb671"
+      ],
+      "ReferenceFieldDefinitions": [
+        "838b1b29-52b3-4395-869a-13a00a04fe74",
+        "a8a91cbb-255b-4e27-835b-b0f5896d6b9d"
+      ]
+    },
+    "8a047a4b-d907-46c7-8d27-1c8b04ceae77": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "DocumentCategory",
+      "Name": "DocumentCategory",
+      "Id": "8a047a4b-d907-46c7-8d27-1c8b04ceae77",
+      "Model": "e166943a-b841-4523-a513-8cb9510dea7e",
+      "FieldDefinitions": [
+        "b71be27a-717c-4866-9452-b72d06a325e9",
+        "8e2ba669-3ebd-4758-8d71-c0de543da922",
+        "63e373d8-95be-4c3a-a481-038a057ae3bf",
+        "ff7545ed-394a-4c9f-b73b-c597120e021a"
+      ],
+      "ReferenceFieldDefinitions": [
+        "3115abc8-17d2-4542-a085-78edbb3b2ab7"
+      ]
+    },
+    "84070119-dce8-46a2-b181-bc98cc33df58": {
+      "$type": "c15f876f-4f74-4034-9acb-03bc3b521e81",
+      "Key": "Folder",
+      "Name": "Folder",
+      "Id": "84070119-dce8-46a2-b181-bc98cc33df58",
+      "Model": "e166943a-b841-4523-a513-8cb9510dea7e",
+      "FieldDefinitions": [
+        "015b557a-cd86-41bb-8eb1-8cd4ce163dd9",
+        "aab2556c-adf6-47db-a6c3-53b6d80afb3d",
+        "f9a1e438-70f0-48b9-bdb3-e4eb8c023e73"
+      ],
+      "ReferenceFieldDefinitions": [
+        "6a2ae56b-92f2-4201-ab74-bdb9a8515c2b",
+        "5f89cd1f-20ba-4e8f-945d-19df08f305a9",
+        "41ac6643-7a18-4878-b07a-8fe8d9851933"
+      ]
+    },
+    "2a743537-6e95-4ec3-8422-be79838b7bd5": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Title",
+      "Name": "Title",
+      "Id": "2a743537-6e95-4ec3-8422-be79838b7bd5",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85"
+    },
+    "24c95c72-2331-4b22-ad50-d6924265f009": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Number",
+      "Name": "Number",
+      "Id": "24c95c72-2331-4b22-ad50-d6924265f009",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85"
+    },
+    "d1576aac-1e5e-4832-93ed-d912b4911f02": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "State",
+      "Name": "State",
+      "Id": "d1576aac-1e5e-4832-93ed-d912b4911f02",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85"
+    },
+    "b51f1c43-9fb0-4e79-99bd-041a69e95346": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "CreatedAt",
+      "Name": "CreatedAt",
+      "Id": "b51f1c43-9fb0-4e79-99bd-041a69e95346",
+      "DataType": "DateTime",
+      "IsIndexed": true,
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85"
+    },
+    "0c52f663-a159-4e40-91e4-f7327b13e793": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Locked",
+      "Name": "Locked",
+      "Id": "0c52f663-a159-4e40-91e4-f7327b13e793",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85"
+    },
+    "f2284a04-897d-44da-a3f2-ed06d75f67b0": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "IsArchived",
+      "Name": "IsArchived",
+      "Id": "f2284a04-897d-44da-a3f2-ed06d75f67b0",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85"
+    },
+    "3d50a185-4c99-43ab-9e18-0398aedbfa49": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Title",
+      "Name": "Title",
+      "Id": "3d50a185-4c99-43ab-9e18-0398aedbfa49",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e"
+    },
+    "542d76bd-5a9d-450c-8eda-d4a76eba4b58": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "CreatedAt",
+      "Name": "CreatedAt",
+      "Id": "542d76bd-5a9d-450c-8eda-d4a76eba4b58",
+      "DataType": "DateTime",
+      "IsIndexed": true,
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e"
+    },
+    "e9783281-dcd3-4031-a5ed-a1ed13bbad24": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "State",
+      "Name": "State",
+      "Id": "e9783281-dcd3-4031-a5ed-a1ed13bbad24",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e"
+    },
+    "a9b59ad3-d030-49f6-b939-159d78d27461": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Locked",
+      "Name": "Locked",
+      "Id": "a9b59ad3-d030-49f6-b939-159d78d27461",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e"
+    },
+    "a978a147-ab06-40e0-86b6-268f7f7fb3c1": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "FileName",
+      "Name": "FileName",
+      "Id": "a978a147-ab06-40e0-86b6-268f7f7fb3c1",
+      "DataType": "String",
+      "IsIndexed": false,
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e"
+    },
+    "885cd140-64f5-478f-a42c-2bea6aceaf3b": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "FileSize",
+      "Name": "FileSize",
+      "Id": "885cd140-64f5-478f-a42c-2bea6aceaf3b",
+      "DataType": "Integer",
+      "IsIndexed": false,
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e"
+    },
+    "88bc11c2-903d-4517-b079-4f3fc5ce20b9": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Name",
+      "Name": "Name",
+      "Id": "88bc11c2-903d-4517-b079-4f3fc5ce20b9",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "81daacd7-4b3f-44bf-b73c-52c7012ad758"
+    },
+    "26d197fc-716e-4377-83a0-93e134f33b8c": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Code",
+      "Name": "Code",
+      "Id": "26d197fc-716e-4377-83a0-93e134f33b8c",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "81daacd7-4b3f-44bf-b73c-52c7012ad758"
+    },
+    "105daf0f-6978-4dcb-bd64-a78a1a36b2c4": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "UserName",
+      "Name": "UserName",
+      "Id": "105daf0f-6978-4dcb-bd64-a78a1a36b2c4",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b"
+    },
+    "46be95ae-0738-4c18-ae24-51a97b649a51": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "DisplayName",
+      "Name": "DisplayName",
+      "Id": "46be95ae-0738-4c18-ae24-51a97b649a51",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b"
+    },
+    "46135953-da64-4c2c-8fd6-b8618c11cec0": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Email",
+      "Name": "Email",
+      "Id": "46135953-da64-4c2c-8fd6-b8618c11cec0",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b"
+    },
+    "76440653-66af-4c24-b3f8-80f39afe52a6": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "IsActive",
+      "Name": "IsActive",
+      "Id": "76440653-66af-4c24-b3f8-80f39afe52a6",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b"
+    },
+    "9b76cfbf-e9b5-41db-b655-b496fca80732": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "CurrentUser",
+      "Name": "CurrentUser",
+      "Id": "9b76cfbf-e9b5-41db-b655-b496fca80732",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b"
+    },
+    "7c8e8231-f6ed-4738-9a02-c3855d262cde": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Title",
+      "Name": "Title",
+      "Id": "7c8e8231-f6ed-4738-9a02-c3855d262cde",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "3c498c35-ec98-4705-9c3e-442588838f4e"
+    },
+    "7adfd10f-1b04-464f-81e3-875fc5148f1d": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "StartAt",
+      "Name": "StartAt",
+      "Id": "7adfd10f-1b04-464f-81e3-875fc5148f1d",
+      "DataType": "DateTime",
+      "IsIndexed": true,
+      "OwningEntity": "3c498c35-ec98-4705-9c3e-442588838f4e"
+    },
+    "7b73f645-1d83-4632-9f2a-c1dc6f982e43": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "EndAt",
+      "Name": "EndAt",
+      "Id": "7b73f645-1d83-4632-9f2a-c1dc6f982e43",
+      "DataType": "DateTime",
+      "IsIndexed": false,
+      "OwningEntity": "3c498c35-ec98-4705-9c3e-442588838f4e"
+    },
+    "0364620f-0b33-441e-85fe-0272149b1a87": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "IsPublic",
+      "Name": "IsPublic",
+      "Id": "0364620f-0b33-441e-85fe-0272149b1a87",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "3c498c35-ec98-4705-9c3e-442588838f4e"
+    },
+    "9fc27b47-1962-4fa0-aca2-a7eb970aa22d": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Title",
+      "Name": "Title",
+      "Id": "9fc27b47-1962-4fa0-aca2-a7eb970aa22d",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "30561d20-43d6-435d-a5db-9f151b3ec970"
+    },
+    "1199121d-bc49-4963-9327-f3f6855fe4b3": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Position",
+      "Name": "Position",
+      "Id": "1199121d-bc49-4963-9327-f3f6855fe4b3",
+      "DataType": "Integer",
+      "IsIndexed": true,
+      "OwningEntity": "30561d20-43d6-435d-a5db-9f151b3ec970"
+    },
+    "9afad796-18ca-44ab-a0ad-2b2a84c03de7": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "State",
+      "Name": "State",
+      "Id": "9afad796-18ca-44ab-a0ad-2b2a84c03de7",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "30561d20-43d6-435d-a5db-9f151b3ec970"
+    },
+    "2cf80089-0848-47d3-b940-680440beb671": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "IsConfidential",
+      "Name": "IsConfidential",
+      "Id": "2cf80089-0848-47d3-b940-680440beb671",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "30561d20-43d6-435d-a5db-9f151b3ec970"
+    },
+    "b71be27a-717c-4866-9452-b72d06a325e9": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Key",
+      "Name": "Key",
+      "Id": "b71be27a-717c-4866-9452-b72d06a325e9",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "8a047a4b-d907-46c7-8d27-1c8b04ceae77"
+    },
+    "8e2ba669-3ebd-4758-8d71-c0de543da922": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Name",
+      "Name": "Name",
+      "Id": "8e2ba669-3ebd-4758-8d71-c0de543da922",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "8a047a4b-d907-46c7-8d27-1c8b04ceae77"
+    },
+    "63e373d8-95be-4c3a-a481-038a057ae3bf": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "SortOrder",
+      "Name": "SortOrder",
+      "Id": "63e373d8-95be-4c3a-a481-038a057ae3bf",
+      "DataType": "Integer",
+      "IsIndexed": true,
+      "OwningEntity": "8a047a4b-d907-46c7-8d27-1c8b04ceae77"
+    },
+    "ff7545ed-394a-4c9f-b73b-c597120e021a": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "IsConfidentialDefault",
+      "Name": "IsConfidentialDefault",
+      "Id": "ff7545ed-394a-4c9f-b73b-c597120e021a",
+      "DataType": "Boolean",
+      "IsIndexed": true,
+      "OwningEntity": "8a047a4b-d907-46c7-8d27-1c8b04ceae77"
+    },
+    "015b557a-cd86-41bb-8eb1-8cd4ce163dd9": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Name",
+      "Name": "Name",
+      "Id": "015b557a-cd86-41bb-8eb1-8cd4ce163dd9",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "84070119-dce8-46a2-b181-bc98cc33df58"
+    },
+    "aab2556c-adf6-47db-a6c3-53b6d80afb3d": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "Path",
+      "Name": "Path",
+      "Id": "aab2556c-adf6-47db-a6c3-53b6d80afb3d",
+      "DataType": "String",
+      "IsIndexed": true,
+      "OwningEntity": "84070119-dce8-46a2-b181-bc98cc33df58"
+    },
+    "f9a1e438-70f0-48b9-bdb3-e4eb8c023e73": {
+      "$type": "42a6f33d-a938-4ad8-9682-aabdc92a53d2",
+      "Key": "CreatedAt",
+      "Name": "CreatedAt",
+      "Id": "f9a1e438-70f0-48b9-bdb3-e4eb8c023e73",
+      "DataType": "DateTime",
+      "IsIndexed": true,
+      "OwningEntity": "84070119-dce8-46a2-b181-bc98cc33df58"
+    },
+    "77e01c0c-f7a4-47e8-b996-3790d2f601f6": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Parent",
+      "Name": "Parent",
+      "Id": "77e01c0c-f7a4-47e8-b996-3790d2f601f6",
+      "RefType": "SingleOptional",
+      "OwningEntity": "81daacd7-4b3f-44bf-b73c-52c7012ad758",
+      "OtherReferenceFields": "c1e8b920-cd17-40b1-8785-ea2d9ca84b59"
+    },
+    "c1e8b920-cd17-40b1-8785-ea2d9ca84b59": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Children",
+      "Name": "Children",
+      "Id": "c1e8b920-cd17-40b1-8785-ea2d9ca84b59",
+      "RefType": "Multiple",
+      "OwningEntity": "81daacd7-4b3f-44bf-b73c-52c7012ad758",
+      "OtherReferenceFields": "77e01c0c-f7a4-47e8-b996-3790d2f601f6"
+    },
+    "f86ce70e-57df-4056-8ff2-9cc0f6af444e": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Members",
+      "Name": "Members",
+      "Id": "f86ce70e-57df-4056-8ff2-9cc0f6af444e",
+      "RefType": "Multiple",
+      "OwningEntity": "81daacd7-4b3f-44bf-b73c-52c7012ad758",
+      "OtherReferenceFields": "ca5cc6fa-8006-42a0-a85d-8e1c081f9be6"
+    },
+    "ca5cc6fa-8006-42a0-a85d-8e1c081f9be6": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "MemberOfUnits",
+      "Name": "MemberOfUnits",
+      "Id": "ca5cc6fa-8006-42a0-a85d-8e1c081f9be6",
+      "RefType": "Multiple",
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b",
+      "OtherReferenceFields": "f86ce70e-57df-4056-8ff2-9cc0f6af444e"
+    },
+    "7ced3833-3857-4846-9ffb-b2acea9fb9f3": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "OwnerUnit",
+      "Name": "OwnerUnit",
+      "Id": "7ced3833-3857-4846-9ffb-b2acea9fb9f3",
+      "RefType": "SingleOptional",
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85",
+      "OtherReferenceFields": "6b06a7d3-2c1a-4482-a7f0-271154f15229"
+    },
+    "6b06a7d3-2c1a-4482-a7f0-271154f15229": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "BusinessCases",
+      "Name": "BusinessCases",
+      "Id": "6b06a7d3-2c1a-4482-a7f0-271154f15229",
+      "RefType": "Multiple",
+      "OwningEntity": "81daacd7-4b3f-44bf-b73c-52c7012ad758",
+      "OtherReferenceFields": "7ced3833-3857-4846-9ffb-b2acea9fb9f3"
+    },
+    "6af1eef1-4b48-478e-b3f4-d2634edb0f7a": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Owners",
+      "Name": "Owners",
+      "Id": "6af1eef1-4b48-478e-b3f4-d2634edb0f7a",
+      "RefType": "Multiple",
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85",
+      "OtherReferenceFields": "3ec3c42b-98ea-48dd-8835-01863be885a5"
+    },
+    "3ec3c42b-98ea-48dd-8835-01863be885a5": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "OwnedBusinessCases",
+      "Name": "OwnedBusinessCases",
+      "Id": "3ec3c42b-98ea-48dd-8835-01863be885a5",
+      "RefType": "Multiple",
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b",
+      "OtherReferenceFields": "6af1eef1-4b48-478e-b3f4-d2634edb0f7a"
+    },
+    "5163b291-34a1-4849-85ff-3c71d356b43f": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Sessions",
+      "Name": "Sessions",
+      "Id": "5163b291-34a1-4849-85ff-3c71d356b43f",
+      "RefType": "Multiple",
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85",
+      "OtherReferenceFields": "7aff7bdb-743e-4ff9-abdd-936839cc72d9"
+    },
+    "7aff7bdb-743e-4ff9-abdd-936839cc72d9": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "BusinessCase",
+      "Name": "BusinessCase",
+      "Id": "7aff7bdb-743e-4ff9-abdd-936839cc72d9",
+      "RefType": "SingleOptional",
+      "OwningEntity": "3c498c35-ec98-4705-9c3e-442588838f4e",
+      "OtherReferenceFields": "5163b291-34a1-4849-85ff-3c71d356b43f"
+    },
+    "6bc1dd86-abde-4108-9e94-48c4ec85b6bf": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Documents",
+      "Name": "Documents",
+      "Id": "6bc1dd86-abde-4108-9e94-48c4ec85b6bf",
+      "RefType": "Multiple",
+      "OwningEntity": "cd030f9b-24ed-4792-a48d-c187939cae85",
+      "OtherReferenceFields": "2df0f6aa-582d-4daf-89a1-def70bf75aed"
+    },
+    "2df0f6aa-582d-4daf-89a1-def70bf75aed": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "BusinessCase",
+      "Name": "BusinessCase",
+      "Id": "2df0f6aa-582d-4daf-89a1-def70bf75aed",
+      "RefType": "SingleOptional",
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+      "OtherReferenceFields": "6bc1dd86-abde-4108-9e94-48c4ec85b6bf"
+    },
+    "9d376b51-f16b-4269-b08b-8c9e948237c2": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "AgendaItems",
+      "Name": "AgendaItems",
+      "Id": "9d376b51-f16b-4269-b08b-8c9e948237c2",
+      "RefType": "Multiple",
+      "OwningEntity": "3c498c35-ec98-4705-9c3e-442588838f4e",
+      "OtherReferenceFields": "838b1b29-52b3-4395-869a-13a00a04fe74"
+    },
+    "838b1b29-52b3-4395-869a-13a00a04fe74": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Session",
+      "Name": "Session",
+      "Id": "838b1b29-52b3-4395-869a-13a00a04fe74",
+      "RefType": "SingleOptional",
+      "OwningEntity": "30561d20-43d6-435d-a5db-9f151b3ec970",
+      "OtherReferenceFields": "9d376b51-f16b-4269-b08b-8c9e948237c2"
+    },
+    "a8a91cbb-255b-4e27-835b-b0f5896d6b9d": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Documents",
+      "Name": "Documents",
+      "Id": "a8a91cbb-255b-4e27-835b-b0f5896d6b9d",
+      "RefType": "Multiple",
+      "OwningEntity": "30561d20-43d6-435d-a5db-9f151b3ec970",
+      "OtherReferenceFields": "637a1b99-0ccd-4eb4-9915-630170bf03c5"
+    },
+    "637a1b99-0ccd-4eb4-9915-630170bf03c5": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "AgendaItems",
+      "Name": "AgendaItems",
+      "Id": "637a1b99-0ccd-4eb4-9915-630170bf03c5",
+      "RefType": "Multiple",
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+      "OtherReferenceFields": "a8a91cbb-255b-4e27-835b-b0f5896d6b9d"
+    },
+    "25627768-6f43-4230-86bb-ffc1c57446be": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Category",
+      "Name": "Category",
+      "Id": "25627768-6f43-4230-86bb-ffc1c57446be",
+      "RefType": "SingleOptional",
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+      "OtherReferenceFields": "3115abc8-17d2-4542-a085-78edbb3b2ab7"
+    },
+    "3115abc8-17d2-4542-a085-78edbb3b2ab7": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Documents",
+      "Name": "Documents",
+      "Id": "3115abc8-17d2-4542-a085-78edbb3b2ab7",
+      "RefType": "Multiple",
+      "OwningEntity": "8a047a4b-d907-46c7-8d27-1c8b04ceae77",
+      "OtherReferenceFields": "25627768-6f43-4230-86bb-ffc1c57446be"
+    },
+    "5d7c1847-2984-4c4d-9a08-b2aa0e772bb1": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Folder",
+      "Name": "Folder",
+      "Id": "5d7c1847-2984-4c4d-9a08-b2aa0e772bb1",
+      "RefType": "SingleOptional",
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+      "OtherReferenceFields": "6a2ae56b-92f2-4201-ab74-bdb9a8515c2b"
+    },
+    "6a2ae56b-92f2-4201-ab74-bdb9a8515c2b": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Documents",
+      "Name": "Documents",
+      "Id": "6a2ae56b-92f2-4201-ab74-bdb9a8515c2b",
+      "RefType": "Multiple",
+      "OwningEntity": "84070119-dce8-46a2-b181-bc98cc33df58",
+      "OtherReferenceFields": "5d7c1847-2984-4c4d-9a08-b2aa0e772bb1"
+    },
+    "5f89cd1f-20ba-4e8f-945d-19df08f305a9": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Parent",
+      "Name": "Parent",
+      "Id": "5f89cd1f-20ba-4e8f-945d-19df08f305a9",
+      "RefType": "SingleOptional",
+      "OwningEntity": "84070119-dce8-46a2-b181-bc98cc33df58",
+      "OtherReferenceFields": "41ac6643-7a18-4878-b07a-8fe8d9851933"
+    },
+    "41ac6643-7a18-4878-b07a-8fe8d9851933": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Subfolders",
+      "Name": "Subfolders",
+      "Id": "41ac6643-7a18-4878-b07a-8fe8d9851933",
+      "RefType": "Multiple",
+      "OwningEntity": "84070119-dce8-46a2-b181-bc98cc33df58",
+      "OtherReferenceFields": "5f89cd1f-20ba-4e8f-945d-19df08f305a9"
+    },
+    "cc315293-3eac-476a-8480-de499673f608": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "CreatedBy",
+      "Name": "CreatedBy",
+      "Id": "cc315293-3eac-476a-8480-de499673f608",
+      "RefType": "SingleOptional",
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+      "OtherReferenceFields": "d53ecf20-65c1-4f44-8e3a-fcec2bf26f52"
+    },
+    "d53ecf20-65c1-4f44-8e3a-fcec2bf26f52": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "CreatedDocuments",
+      "Name": "CreatedDocuments",
+      "Id": "d53ecf20-65c1-4f44-8e3a-fcec2bf26f52",
+      "RefType": "Multiple",
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b",
+      "OtherReferenceFields": "cc315293-3eac-476a-8480-de499673f608"
+    },
+    "35cfa966-9d9f-434f-95a7-507bb313f26f": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "OwnerUnit",
+      "Name": "OwnerUnit",
+      "Id": "35cfa966-9d9f-434f-95a7-507bb313f26f",
+      "RefType": "SingleOptional",
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+      "OtherReferenceFields": "2157a52c-8270-45ed-a05d-5b387829b376"
+    },
+    "2157a52c-8270-45ed-a05d-5b387829b376": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "Documents",
+      "Name": "Documents",
+      "Id": "2157a52c-8270-45ed-a05d-5b387829b376",
+      "RefType": "Multiple",
+      "OwningEntity": "81daacd7-4b3f-44bf-b73c-52c7012ad758",
+      "OtherReferenceFields": "35cfa966-9d9f-434f-95a7-507bb313f26f"
+    },
+    "3f0771ed-7629-495c-bff2-5b8d3939f169": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "ExplicitViewers",
+      "Name": "ExplicitViewers",
+      "Id": "3f0771ed-7629-495c-bff2-5b8d3939f169",
+      "RefType": "Multiple",
+      "OwningEntity": "40d51f0a-31f0-4a04-9d16-77f454fd914e",
+      "OtherReferenceFields": "7c857219-3363-4183-9746-cca341d0c5f4"
+    },
+    "7c857219-3363-4183-9746-cca341d0c5f4": {
+      "$type": "2147ed0f-b37d-4429-a3f8-8312c1620383",
+      "Key": "ExplicitlyViewableDocuments",
+      "Name": "ExplicitlyViewableDocuments",
+      "Id": "7c857219-3363-4183-9746-cca341d0c5f4",
+      "RefType": "Multiple",
+      "OwningEntity": "3777d451-b036-4772-9358-5a67ab44763b",
+      "OtherReferenceFields": "3f0771ed-7629-495c-bff2-5b8d3939f169"
+    }
+  }
+}
