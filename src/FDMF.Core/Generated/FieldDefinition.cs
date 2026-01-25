@@ -1,11 +1,10 @@
 // ReSharper disable All
 using System.Runtime.InteropServices;
 using System.Text;
+using MemoryPack;
 using FDMF.Core;
 using FDMF.Core.Database;
-using MemoryPack;
-
-namespace Model.Generated;
+namespace BaseModel.Generated;
 
 [MemoryPackable]
 public partial struct FieldDefinition : ITransactionObject, IEquatable<FieldDefinition>
@@ -24,22 +23,16 @@ public partial struct FieldDefinition : ITransactionObject, IEquatable<FieldDefi
     public Guid ObjId { get; set; }
 
     [MemoryPackIgnore]
-    public string Key
-    {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Key).AsSpan());
-        set => DbSession.SetFldValue(ObjId, Fields.Key, Encoding.Unicode.GetBytes(value));
-    }
-    [MemoryPackIgnore]
     public string Name
     {
         get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name).AsSpan());
         set => DbSession.SetFldValue(ObjId, Fields.Name, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
-    public string Id
+    public bool IsIndexed
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Id).AsSpan());
-        set => DbSession.SetFldValue(ObjId, Fields.Id, Encoding.Unicode.GetBytes(value));
+        get => MemoryMarshal.Read<bool>(DbSession.GetFldValue(ObjId, Fields.IsIndexed).AsSpan());
+        set => DbSession.SetFldValue(ObjId, Fields.IsIndexed, value.AsSpan());
     }
     [MemoryPackIgnore]
     public string DataType
@@ -48,10 +41,16 @@ public partial struct FieldDefinition : ITransactionObject, IEquatable<FieldDefi
         set => DbSession.SetFldValue(ObjId, Fields.DataType, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
-    public bool IsIndexed
+    public string Key
     {
-        get => MemoryMarshal.Read<bool>(DbSession.GetFldValue(ObjId, Fields.IsIndexed).AsSpan());
-        set => DbSession.SetFldValue(ObjId, Fields.IsIndexed, value.AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Key).AsSpan());
+        set => DbSession.SetFldValue(ObjId, Fields.Key, Encoding.Unicode.GetBytes(value));
+    }
+    [MemoryPackIgnore]
+    public string Id
+    {
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Id).AsSpan());
+        set => DbSession.SetFldValue(ObjId, Fields.Id, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
     public EntityDefinition OwningEntity
@@ -71,11 +70,17 @@ public partial struct FieldDefinition : ITransactionObject, IEquatable<FieldDefi
 
     public static class Fields
     {
-        public static readonly Guid Key = new Guid([210, 144, 93, 138, 28, 27, 142, 66, 160, 16, 154, 231, 214, 3, 221, 48]);
+        //c2ef8935-fcaf-4b33-aa31-59014a4c6765
         public static readonly Guid Name = new Guid([53, 137, 239, 194, 175, 252, 51, 75, 170, 49, 89, 1, 74, 76, 103, 101]);
-        public static readonly Guid Id = new Guid([226, 19, 22, 249, 249, 169, 59, 78, 150, 227, 56, 101, 3, 25, 220, 12]);
-        public static readonly Guid DataType = new Guid([140, 90, 245, 180, 115, 111, 188, 65, 176, 81, 203, 174, 177, 139, 3, 144]);
+        //2e699a43-98b9-42f7-a26c-20256305b7cb
         public static readonly Guid IsIndexed = new Guid([67, 154, 105, 46, 185, 152, 247, 66, 162, 108, 32, 37, 99, 5, 183, 203]);
+        //b4f55a8c-6f73-41bc-b051-cbaeb18b0390
+        public static readonly Guid DataType = new Guid([140, 90, 245, 180, 115, 111, 188, 65, 176, 81, 203, 174, 177, 139, 3, 144]);
+        //8a5d90d2-1b1c-428e-a010-9ae7d603dd30
+        public static readonly Guid Key = new Guid([210, 144, 93, 138, 28, 27, 142, 66, 160, 16, 154, 231, 214, 3, 221, 48]);
+        //f91613e2-a9f9-4e3b-96e3-38650319dc0c
+        public static readonly Guid Id = new Guid([226, 19, 22, 249, 249, 169, 59, 78, 150, 227, 56, 101, 3, 25, 220, 12]);
+        //f097fe25-1d11-47b3-a02c-0072a781a528
         public static readonly Guid OwningEntity = new Guid([37, 254, 151, 240, 17, 29, 179, 71, 160, 44, 0, 114, 167, 129, 165, 40]);
     }
 }

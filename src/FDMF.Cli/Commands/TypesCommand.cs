@@ -1,8 +1,8 @@
 using System.CommandLine;
+using BaseModel.Generated;
 using FDMF.Cli.Utils;
 using FDMF.Core;
 using FDMF.Core.Database;
-using Model.Generated;
 using Environment = FDMF.Core.Environment;
 
 namespace FDMF.Cli.Commands;
@@ -20,7 +20,7 @@ public static class TypesCommand
             using var env = Environment.Open(resolvedDb);
             using var session = new DbSession(env);
 
-            var mdl = session.GetObjFromGuid<Model.Generated.Model>(env.ModelGuid);
+            var mdl = session.GetObjFromGuid<Model>(env.ModelGuid);
 
             foreach (var e in Enumerable.OrderBy<EntityDefinition, string>(mdl!.Value.GetAllEntityDefinitions(), x => x.Key))
             {

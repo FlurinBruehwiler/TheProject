@@ -1,11 +1,10 @@
 // ReSharper disable All
 using System.Runtime.InteropServices;
 using System.Text;
+using MemoryPack;
 using FDMF.Core;
 using FDMF.Core.Database;
-using MemoryPack;
-
-namespace Model.Generated;
+namespace BaseModel.Generated;
 
 [MemoryPackable]
 public partial struct Model : ITransactionObject, IEquatable<Model>
@@ -30,11 +29,11 @@ public partial struct Model : ITransactionObject, IEquatable<Model>
         set => DbSession.SetFldValue(ObjId, Fields.Name, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
+    public AssocCollection<Model> ImportedBy => new(DbSession, ObjId, Fields.ImportedBy, Model.Fields.ImportedModels);
+    [MemoryPackIgnore]
     public AssocCollection<EntityDefinition> EntityDefinitions => new(DbSession, ObjId, Fields.EntityDefinitions, EntityDefinition.Fields.Model);
     [MemoryPackIgnore]
     public AssocCollection<Model> ImportedModels => new(DbSession, ObjId, Fields.ImportedModels, Model.Fields.ImportedBy);
-    [MemoryPackIgnore]
-    public AssocCollection<Model> ImportedBy => new(DbSession, ObjId, Fields.ImportedBy, Model.Fields.ImportedModels);
 
     public static bool operator ==(Model a, Model b) => a.DbSession == b.DbSession && a.ObjId == b.ObjId;
     public static bool operator !=(Model a, Model b) => a.DbSession != b.DbSession || a.ObjId != b.ObjId;
@@ -47,9 +46,13 @@ public partial struct Model : ITransactionObject, IEquatable<Model>
 
     public static class Fields
     {
+        //efe4fee5-bbca-4b19-8c26-c96ba8b2c008
         public static readonly Guid Name = new Guid([229, 254, 228, 239, 202, 187, 25, 75, 140, 38, 201, 107, 168, 178, 192, 8]);
-        public static readonly Guid EntityDefinitions = new Guid([153, 139, 231, 6, 13, 75, 215, 69, 176, 200, 207, 87, 199, 63, 195, 232]);
-        public static readonly Guid ImportedModels = new Guid([193, 112, 52, 202, 54, 207, 90, 65, 136, 193, 71, 194, 112, 15, 195, 125]);
+        //bff6be49-6aed-4998-91ab-28702a3e29b0
         public static readonly Guid ImportedBy = new Guid([73, 190, 246, 191, 237, 106, 152, 73, 145, 171, 40, 112, 42, 62, 41, 176]);
+        //06e78b99-4b0d-45d7-b0c8-cf57c73fc3e8
+        public static readonly Guid EntityDefinitions = new Guid([153, 139, 231, 6, 13, 75, 215, 69, 176, 200, 207, 87, 199, 63, 195, 232]);
+        //ca3470c1-cf36-415a-88c1-47c2700fc37d
+        public static readonly Guid ImportedModels = new Guid([193, 112, 52, 202, 54, 207, 90, 65, 136, 193, 71, 194, 112, 15, 195, 125]);
     }
 }

@@ -1,7 +1,7 @@
 using System.CommandLine;
+using BaseModel.Generated;
 using FDMF.Cli.Utils;
 using FDMF.Core.Database;
-using Model.Generated;
 using Environment = FDMF.Core.Environment;
 
 namespace FDMF.Cli.Commands;

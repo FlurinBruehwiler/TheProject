@@ -1,14 +1,16 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using BaseModel.Generated;
+using FDMF.Core;
 using FDMF.Core.Database;
 
 namespace FDMF.SourceGen;
 
 public static class ModelGenerator
 {
-    public static void Generate(Model.Generated.Model model, string targetDir)
+    public static void Generate(Model model, string targetDir)
     {
-        foreach (var entity in model.EntityDefinitions)
+        foreach (var entity in model.GetAllEntityDefinitions())
         {
             var sourceBuilder = new SourceBuilder();
 

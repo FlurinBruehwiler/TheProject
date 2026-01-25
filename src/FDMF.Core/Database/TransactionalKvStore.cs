@@ -131,18 +131,11 @@ public sealed class TransactionalKvStore : IDisposable
         if (IsReadOnly)
             throw new InvalidOperationException("TransactionalKvStore is read-only");
 
-        if (ReadTransaction.Get(Database, key).resultCode == MDBResultCode.Success)
-        {
-            var keySlice = CopyKeyWithFlag(key, ValueFlag.Delete);
-            ChangeSet!.Put(keySlice, Slice<byte>.Empty);
-        }
-        else
-        {
-            Span<byte> searchKey = stackalloc byte[key.Length + 1];
-            key.CopyTo(searchKey);
-            searchKey[^1] = 0;
-            ChangeSet!.Delete(searchKey);
-        }
+        // Always write a delete marker into the change set.
+        // Even if the key doesn't exist in the base set, removing the changeset entry would shift B+tree leaf indices
+        // and break cursors that are currently positioned on later keys.
+        var keySlice = CopyKeyWithFlag(key, ValueFlag.Delete);
+        ChangeSet!.Put(keySlice, Slice<byte>.Empty);
 
         return ResultCode.Success;
     }

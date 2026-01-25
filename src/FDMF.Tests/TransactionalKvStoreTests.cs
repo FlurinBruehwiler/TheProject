@@ -1083,4 +1083,38 @@ public class TransactionalKvStoreTests
         Assert.Equal(ResultCode.Success, cursor.SetRange([0]));
         AssertBytes.Equal([(byte)1], cursor.GetCurrent().Value);
     }
+
+    [Fact]
+    public void Cursor_Delete_Test()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+
+        using var cursor = store.CreateCursor();
+
+        store.Put([1], [1]);
+        store.Put([2], [2]);
+        store.Put([3], [3]);
+
+        cursor.SetRange([2]);
+
+        Assert.Equal([(byte)2], cursor.GetCurrent().Value);
+        store.Delete([(byte)1]);
+
+        Assert.Equal(ResultCode.Success, cursor.Delete());
+
+        Assert.Equal(ResultCode.NotFound, store.Get([(byte)2], out _));
+        Assert.Equal(ResultCode.Success, store.Get([(byte)3], out _));
+    }
 }

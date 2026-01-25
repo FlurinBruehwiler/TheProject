@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using BaseModel.Generated;
 
 namespace FDMF.Core.Database;
 
@@ -14,7 +15,7 @@ public static class JsonDump
 {
     public static string GetJsonDump(DbSession dbSession)
     {
-        var model = dbSession.GetObjFromGuid<Model.Generated.Model>(dbSession.Environment.ModelGuid);
+        var model = dbSession.GetObjFromGuid<Model>(dbSession.Environment.ModelGuid);
         var entityById = model!.Value.GetAllEntityDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
 
         using var stream = new MemoryStream();
@@ -138,7 +139,7 @@ public static class JsonDump
         }
 
 
-        var model = dbSession.GetObjFromGuid<Model.Generated.Model>(dbSession.Environment.ModelGuid);
+        var model = dbSession.GetObjFromGuid<Model>(dbSession.Environment.ModelGuid);
         var entityById = model!.Value.GetAllEntityDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
 
         //TODO: better error handling
@@ -209,7 +210,7 @@ public static class JsonDump
                 }
 
                 // Always clear existing connections first so the DB matches the json.
-                dbSession.RemoveAllAso(objId, Guid.Parse(fldIdA));
+                //dbSession.RemoveAllAso(objId, Guid.Parse(fldIdA));
 
                 if (refField.RefType == nameof(RefType.Multiple))
                 {

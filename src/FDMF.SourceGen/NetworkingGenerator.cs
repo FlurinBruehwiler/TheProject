@@ -33,7 +33,7 @@ public static class NetworkingGenerator
         sb.AppendLine("using System.Threading.Channels;");
         sb.AppendLine();
 
-        sb.AppendLine("namespace Core;");
+        sb.AppendLine("namespace FDMF.Core.Generated;");
         sb.AppendLine();
 
         var interfaceName = interfaceDeclarationSyntax.Identifier.Text;

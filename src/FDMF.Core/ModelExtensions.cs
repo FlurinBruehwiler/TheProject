@@ -1,10 +1,10 @@
-﻿using Model.Generated;
+﻿using BaseModel.Generated;
 
 namespace FDMF.Core;
 
 public static class ModelExtensions
 {
-    extension(Model.Generated.Model model)
+    extension(Model model)
     {
         public List<EntityDefinition> GetAllEntityDefinitions()
         {
@@ -14,7 +14,7 @@ public static class ModelExtensions
 
             return result;
 
-            void AddFromModel(Model.Generated.Model mdl)
+            void AddFromModel(Model mdl)
             {
                 foreach (var ed in mdl.EntityDefinitions)
                 {

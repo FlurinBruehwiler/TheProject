@@ -1,10 +1,9 @@
 // ReSharper disable All
 using System.Runtime.InteropServices;
 using System.Text;
+using MemoryPack;
 using FDMF.Core;
 using FDMF.Core.Database;
-using MemoryPack;
-
 namespace TestModel.Generated;
 
 [MemoryPackable]

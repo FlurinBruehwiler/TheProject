@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using BaseModel.Generated;
 using LightningDB;
-using Model.Generated;
 
 namespace FDMF.Core.Database;
 
@@ -106,7 +106,7 @@ public static class Searcher
     public static void UpdateSearchIndex(DbSession session, LightningTransaction txn, BPlusTree changeSet)
     {
         var environment = session.Environment;
-        var model = session.GetObjFromGuid<Model.Generated.Model>(environment.ModelGuid)!.Value;
+        var model = session.GetObjFromGuid<Model>(environment.ModelGuid)!.Value;
         var fieldsById = model.GetAllFieldDefinitions().ToDictionary(x => Guid.Parse(x.Id), x => x);
 
         var changeCursor = changeSet.CreateCursor();

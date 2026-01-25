@@ -1,5 +1,5 @@
+using BaseModel.Generated;
 using FDMF.Core.Database;
-using Model.Generated;
 using Environment = FDMF.Core.Environment;
 
 namespace FDMF.Tests;
@@ -22,7 +22,7 @@ public class JsonDumpImportTests
 
         //using var readSession = new DbSession(env, readOnly: true);
 
-        var model = session.GetObjFromGuid<Model.Generated.Model>(env.ModelGuid);
+        var model = session.GetObjFromGuid<Model>(env.ModelGuid);
         Assert.NotNull(model);
         Assert.Equal("TestModel", model.Value.Name);
         

@@ -1,5 +1,5 @@
+using BaseModel.Generated;
 using FDMF.Core.Database;
-using Model.Generated;
 
 namespace FDMF.Cli.Utils;
 

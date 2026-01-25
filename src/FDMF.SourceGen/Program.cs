@@ -1,20 +1,33 @@
-﻿using FDMF.Core.Database;
+﻿using BaseModel.Generated;
+using FDMF.Core.Database;
 using FDMF.SourceGen;
 using Environment = FDMF.Core.Environment;
 using Helper = FDMF.SourceGen.Helper;
 
 var root = Helper.GetRootDir();
 
-var env = Environment.CreateDatabase("temp", Path.Combine(root, "FDMF.Tests/testdata/TestModelDump.json"));
+//Main
+using var env2 = Environment.CreateDatabase("temp2");
+
+using (var session = new DbSession(env2))
+{
+    var model = session.GetObjFromGuid<Model>(env2.ModelGuid);
+    ModelGenerator.Generate(model!.Value, Path.Combine(root, "FDMF.Core/Generated"));
+}
+
+//Test Data
+using var env = Environment.CreateDatabase("temp", Path.Combine(root, "FDMF.Tests/testdata/TestModelDump.json"));
 
 using (var session = new DbSession(env))
 {
-    var model = session.GetObjFromGuid<Model.Generated.Model>(env.ModelGuid);
+    var model = session.GetObjFromGuid<Model>(env.ModelGuid);
     ModelGenerator.Generate(model!.Value, Path.Combine(root, "FDMF.Tests/Generated"));
 }
 
-NetworkingGenerator.Generate(Path.Combine(root, "Core/IServerProcedures.cs"));
-NetworkingGenerator.Generate(Path.Combine(root, "Core/IClientProcedures.cs"));
+//Networking
+NetworkingGenerator.Generate(Path.Combine(root, "FDMF.Core/IServerProcedures.cs"));
+NetworkingGenerator.Generate(Path.Combine(root, "FDMF.Core/IClientProcedures.cs"));
+
 
 
 

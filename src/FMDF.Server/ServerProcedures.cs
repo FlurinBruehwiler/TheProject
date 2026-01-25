@@ -1,5 +1,4 @@
 ﻿using FDMF.Core;
-using Model.Generated;
 
 namespace FDMF.Server;
 
@@ -11,10 +10,4 @@ public class ServerProceduresImpl(ConnectedClient connectedClient) : IServerProc
         return Task.FromResult(default(ServerStatus));
     }
 
-    public Task<Folder> GetSomeObjs()
-    {
-        var folder = new Folder();
-
-        return Task.FromResult(folder);
-    }
 }
