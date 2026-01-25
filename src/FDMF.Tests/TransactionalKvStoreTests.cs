@@ -556,4 +556,96 @@ public class TransactionalKvStoreTests
         Assert.Equal(ResultCode.NotFound, store.Get([1], out _));
         Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
     }
+
+    [Fact]
+    public void Cursor_Delete_Overridden_Base_Entry_2()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+        store.Put([1], [9]);
+
+        using var cursor = store.CreateCursor();
+        cursor.SetRange([1]);
+
+        AssertBytes.Equal([(byte)9], cursor.GetCurrent().Value);
+        Assert.Equal(ResultCode.Success, cursor.Delete());
+
+        Assert.Equal(ResultCode.NotFound, store.Get([1], out _));
+        Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
+    }
+
+    [Fact]
+    public void Cursor_Delete_Overridden_Base_Entry_3()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Put(db, [1], [1]);
+            tx.Put(db, [2], [2]);
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+        store.Put([1], [9]);
+
+        using var cursor = store.CreateCursor();
+        cursor.SetRange([1]);
+
+        AssertBytes.Equal([(byte)9], cursor.GetCurrent().Value);
+        Assert.Equal(ResultCode.Success, cursor.Delete());
+
+        Assert.Equal(ResultCode.NotFound, store.Get([1], out _));
+        Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
+    }
+
+    [Fact]
+    public void Cursor_Delete_Overridden_Base_Entry_4()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Put(db, [3],   [2]);
+            tx.Put(db, [8],   [3]);
+            tx.Put(db, [100], [4]);
+            tx.Put(db, [200], [5]);
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+        store.Put([1], [10]);
+        store.Put([2], [11]);
+        store.Put([3], [12]);
+
+
+        using var cursor = store.CreateCursor();
+        cursor.SetRange([2]);
+
+        AssertBytes.Equal([(byte)11], cursor.GetCurrent().Value);
+        Assert.Equal(ResultCode.Success, cursor.Delete());
+
+        Assert.Equal(ResultCode.NotFound, store.Get([2], out _));
+        Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
+
+        Assert.Equal([(byte)12], cursor.Next().Value);
+    }
 }

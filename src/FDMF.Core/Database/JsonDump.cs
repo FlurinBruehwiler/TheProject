@@ -204,7 +204,7 @@ public static class JsonDump
 
                 if (!entityJson.TryGetProperty(refField.Key, out var value) || value.ValueKind == JsonValueKind.Null)
                 {
-                    dbSession.RemoveAllAso(objId, Guid.Parse(fldIdA));
+                    // dbSession.RemoveAllAso(objId, Guid.Parse(fldIdA));
                     continue;
                 }
 
@@ -287,6 +287,9 @@ public static class JsonDump
                 }
                 
                 dbSession.SetFldValue(objId, fldId, MemoryMarshal.Cast<char, byte>(s.AsSpan()));
+
+                var x = dbSession.GetFldValue(objId, fldId);
+
                 return;
             }
             case FieldDataType.Integer:

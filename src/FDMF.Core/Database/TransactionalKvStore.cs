@@ -245,6 +245,7 @@ public sealed class TransactionalKvStore : IDisposable
             return ResultCode.Success;
         }
 
+        //this code has a nasty bug, it deletes the wrong thing sometimes!
         public ResultCode Delete()
         {
             if (_store.IsReadOnly)

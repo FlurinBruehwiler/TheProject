@@ -10,7 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\FDMF.Core\FDMF.Core.csproj" />
   </ItemGroup>
 
