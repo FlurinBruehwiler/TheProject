@@ -498,7 +498,7 @@ public class TransactionalKvStoreTests
 
         Assert.Equal(ResultCode.NotFound, store.Get([1], out _));
 
-        AssertBytes.Equal([(byte)2], cursor.GetCurrent().Value);
+        AssertBytes.Equal([(byte)2], cursor.Next().Value);
         Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
     }
 
@@ -636,7 +636,6 @@ public class TransactionalKvStoreTests
         store.Put([2], [11]);
         store.Put([3], [12]);
 
-
         using var cursor = store.CreateCursor();
         cursor.SetRange([2]);
 
@@ -647,5 +646,229 @@ public class TransactionalKvStoreTests
         Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
 
         Assert.Equal([(byte)12], cursor.Next().Value);
+    }
+
+    [Fact]
+    public void Cursor_Delete_Then_Put_Same_Key_GetCurrent_Stays_NotFound_Until_Next()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Put(db, [1], [1]);
+            tx.Put(db, [2], [2]);
+            tx.Put(db, [3], [3]);
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+
+        using var cursor = store.CreateCursor();
+        cursor.SetRange([2]);
+
+        AssertBytes.Equal([(byte)2], cursor.GetCurrent().Value);
+        Assert.Equal(ResultCode.Success, cursor.Delete());
+        Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
+
+        // Interleave a non-cursor operation: re-insert same key in changeset.
+        store.Put([2], [99]);
+        Assert.Equal(ResultCode.Success, store.Get([2], out var afterPut));
+        AssertBytes.Equal([(byte)99], afterPut);
+
+        // LMDB semantics: GetCurrent stays NotFound until cursor is moved.
+        Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
+
+        // Next() should now land on the newly inserted key (same key) before advancing to later keys.
+        AssertBytes.Equal([(byte)99], cursor.Next().Value);
+        AssertBytes.Equal([(byte)3], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+    }
+
+    [Fact]
+    public void Cursor_Delete_Then_Put_Same_Key_With_Base_Override()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Put(db, [2], [20]);
+            tx.Put(db, [3], [30]);
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+
+        // Override base.
+        store.Put([2], [21]);
+
+        using var cursor = store.CreateCursor();
+        cursor.SetRange([2]);
+        AssertBytes.Equal([(byte)21], cursor.GetCurrent().Value);
+
+        // Delete via cursor.
+        Assert.Equal(ResultCode.Success, cursor.Delete());
+        Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
+        Assert.Equal(ResultCode.NotFound, store.Get([2], out _));
+
+        // Put again with a new value.
+        store.Put([2], [22]);
+        Assert.Equal(ResultCode.Success, store.Get([2], out var v));
+        AssertBytes.Equal([(byte)22], v);
+
+        // Cursor still NotFound until moved.
+        Assert.Equal(ResultCode.NotFound, cursor.GetCurrent().ResultCode);
+
+        // Next should return the re-inserted value, then next base key.
+        AssertBytes.Equal([(byte)22], cursor.Next().Value);
+        AssertBytes.Equal([(byte)30], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+    }
+
+    [Fact]
+    public void Cursor_Delete_Then_Store_Delete_Then_Put_Still_Visible_On_Next()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Put(db, [1], [1]);
+            tx.Put(db, [2], [2]);
+            tx.Put(db, [3], [3]);
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+
+        using var cursor = store.CreateCursor();
+        cursor.SetRange([2]);
+        Assert.Equal(ResultCode.Success, cursor.Delete());
+
+        // Non-cursor deletes should keep the key hidden.
+        store.Delete([2]);
+        Assert.Equal(ResultCode.NotFound, store.Get([2], out _));
+
+        // Recreate it.
+        store.Put([2], [200]);
+        Assert.Equal(ResultCode.Success, store.Get([2], out var v));
+        AssertBytes.Equal([(byte)200], v);
+
+        // Cursor sees it only after Next.
+        AssertBytes.Equal([(byte)200], cursor.Next().Value);
+        AssertBytes.Equal([(byte)3], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+    }
+
+    [Fact]
+    public void Cursor_At_End_Then_Put_New_Max_Key_Next_Returns_It()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Put(db, [1], [1]);
+            tx.Put(db, [2], [2]);
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+
+        using var cursor = store.CreateCursor();
+        Assert.Equal(ResultCode.Success, cursor.SetRange([0]));
+
+        AssertBytes.Equal([(byte)1], cursor.GetCurrent().Value);
+        AssertBytes.Equal([(byte)2], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+
+        // Interleave: append a new max key into the changeset.
+        store.Put([3], [30]);
+        Assert.Equal(ResultCode.Success, store.Get([3], out var v));
+        AssertBytes.Equal([(byte)30], v);
+
+        // Cursor was exhausted; next Next() should surface the newly appended key.
+        AssertBytes.Equal([(byte)30], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+    }
+
+    [Fact]
+    public void Cursor_At_End_Then_Put_New_Max_Key_When_Base_Empty()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+
+        store.Put([1], [10]);
+        store.Put([2], [20]);
+
+        using var cursor = store.CreateCursor();
+        Assert.Equal(ResultCode.Success, cursor.SetRange([0]));
+
+        AssertBytes.Equal([(byte)10], cursor.GetCurrent().Value);
+        AssertBytes.Equal([(byte)20], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+
+        store.Put([3], [30]);
+
+        AssertBytes.Equal([(byte)30], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+    }
+
+    [Fact]
+    public void Cursor_At_End_Then_Delete_Last_Then_Put_New_Last_Next_Returns_It()
+    {
+        using var env = new LightningEnvironment(DatabaseCollection.GetTempDbDirectory());
+        env.Open();
+
+        LightningDatabase db;
+        using (var tx = env.BeginTransaction())
+        {
+            db = tx.OpenDatabase();
+            tx.Put(db, [1], [1]);
+            tx.Put(db, [2], [2]);
+            tx.Put(db, [3], [3]);
+            tx.Commit();
+        }
+
+        using var dbHandle = db;
+        using var store = new TransactionalKvStore(env, db, new Arena(1000));
+
+        using var cursor = store.CreateCursor();
+        Assert.Equal(ResultCode.Success, cursor.SetRange([0]));
+
+        AssertBytes.Equal([(byte)1], cursor.GetCurrent().Value);
+        AssertBytes.Equal([(byte)2], cursor.Next().Value);
+        AssertBytes.Equal([(byte)3], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
+
+        // Delete last key and add a new last key.
+        store.Delete([3]);
+        store.Put([4], [40]);
+
+        AssertBytes.Equal([(byte)40], cursor.Next().Value);
+        Assert.Equal(ResultCode.NotFound, cursor.Next().ResultCode);
     }
 }
