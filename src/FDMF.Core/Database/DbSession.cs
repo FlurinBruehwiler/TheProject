@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FDMF.Core.Utils;
+using LightningDB;
 
 namespace FDMF.Core.Database;
 
@@ -14,7 +15,6 @@ namespace FDMF.Core.Database;
 // [ ] implement inheritance / unions
 // [x] implement readonly transactions
 // [x] improve kvstore to work with less allocations
-
 
 //todo do we want/need locks in here to ensure that there aren't multiple threads at the same time interacting with the transaction
 
@@ -69,9 +69,9 @@ public sealed class DbSession : IDisposable
             History.WriteCommit(Arena, Environment, writeTransaction, Store.ChangeSet!, timestampUtc, userId);
 
             Searcher.UpdateSearchIndex(this, writeTransaction, Store.ChangeSet!);
- 
+
             Store.Commit(writeTransaction);
- 
+
             writeTransaction.Commit();
         }
 
@@ -115,7 +115,7 @@ public sealed class DbSession : IDisposable
         //delete everything that starts with the ObjId
         if (Cursor.SetRange(prefix) == ResultCode.Success)
         {
-            while (true)
+            do
             {
                 var current = Cursor.GetCurrent();
                 if (current.ResultCode != ResultCode.Success)
@@ -132,11 +132,15 @@ public sealed class DbSession : IDisposable
                     //flip to get other assoc
                     k.Slice(0, 2 * 16).CopyTo(tempBuf.Slice(2 * 16, 2 * 16));
                     k.Slice(16 * 2, 2 * 16).CopyTo(tempBuf.Slice(0, 2 * 16));
-                    Store.Delete(tempBuf);
+                    var r = Store.Delete(tempBuf);
+                    Debug.Assert(r == ResultCode.Success);
                 }
 
-                Cursor.Delete();
-            }
+                var r2 = Cursor.Delete();
+                Debug.Assert(r2 == ResultCode.Success);
+
+                // Cursor.Delete() follows LMDB semantics: cursor is on a deleted position until Next().
+            } while (Cursor.Next().ResultCode == ResultCode.Success);
         }
     }
 
@@ -178,17 +182,17 @@ public sealed class DbSession : IDisposable
         EnsureWritable();
 
         Span<byte> keyBuf = stackalloc byte[4 * 16];
-        MemoryMarshal.Write(keyBuf.Slice(0*16, 16), objIdA);
-        MemoryMarshal.Write(keyBuf.Slice(1*16, 16), fldIdA);
-        MemoryMarshal.Write(keyBuf.Slice(2*16, 16), objIdB);
-        MemoryMarshal.Write(keyBuf.Slice(3*16, 16), fldIdB);
+        MemoryMarshal.Write(keyBuf.Slice(0 * 16, 16), objIdA);
+        MemoryMarshal.Write(keyBuf.Slice(1 * 16, 16), fldIdA);
+        MemoryMarshal.Write(keyBuf.Slice(2 * 16, 16), objIdB);
+        MemoryMarshal.Write(keyBuf.Slice(3 * 16, 16), fldIdB);
         var res1 = Store.Put(keyBuf, [(byte)ValueTyp.Aso]);
 
         Span<byte> otherKeyBuf = stackalloc byte[4 * 16];
-        MemoryMarshal.Write(otherKeyBuf.Slice(0*16, 16), objIdB);
-        MemoryMarshal.Write(otherKeyBuf.Slice(1*16, 16), fldIdB);
-        MemoryMarshal.Write(otherKeyBuf.Slice(2*16, 16), objIdA);
-        MemoryMarshal.Write(otherKeyBuf.Slice(3*16, 16), fldIdA);
+        MemoryMarshal.Write(otherKeyBuf.Slice(0 * 16, 16), objIdB);
+        MemoryMarshal.Write(otherKeyBuf.Slice(1 * 16, 16), fldIdB);
+        MemoryMarshal.Write(otherKeyBuf.Slice(2 * 16, 16), objIdA);
+        MemoryMarshal.Write(otherKeyBuf.Slice(3 * 16, 16), fldIdA);
         var res2 = Store.Put(otherKeyBuf, [(byte)ValueTyp.Aso]);
 
         Debug.Assert(res1 == res2);
@@ -209,8 +213,8 @@ public sealed class DbSession : IDisposable
         EnsureWritable();
 
         Span<byte> prefix = stackalloc byte[2 * 16];
-        MemoryMarshal.Write(prefix.Slice(0*16, 16), objId);
-        MemoryMarshal.Write(prefix.Slice(1*16, 16), fldId);
+        MemoryMarshal.Write(prefix.Slice(0 * 16, 16), objId);
+        MemoryMarshal.Write(prefix.Slice(1 * 16, 16), fldId);
 
         Span<byte> tempBuf = stackalloc byte[4 * 16];
 
@@ -241,6 +245,9 @@ public sealed class DbSession : IDisposable
                 }
 
                 Cursor.Delete();
+
+                // Cursor.Delete() follows LMDB semantics: cursor is on a deleted position until Next().
+                Cursor.Next();
             }
         }
     }
@@ -254,17 +261,17 @@ public sealed class DbSession : IDisposable
         EnsureWritable();
 
         Span<byte> keyBuf = stackalloc byte[4 * 16];
-        MemoryMarshal.Write(keyBuf.Slice(0*16, 16), objIdA);
-        MemoryMarshal.Write(keyBuf.Slice(1*16, 16), fldIdA);
-        MemoryMarshal.Write(keyBuf.Slice(2*16, 16), objIdB);
-        MemoryMarshal.Write(keyBuf.Slice(3*16, 16), fldIdB);
+        MemoryMarshal.Write(keyBuf.Slice(0 * 16, 16), objIdA);
+        MemoryMarshal.Write(keyBuf.Slice(1 * 16, 16), fldIdA);
+        MemoryMarshal.Write(keyBuf.Slice(2 * 16, 16), objIdB);
+        MemoryMarshal.Write(keyBuf.Slice(3 * 16, 16), fldIdB);
         var res1 = Store.Delete(keyBuf);
 
         Span<byte> otherKeyBuf = stackalloc byte[4 * 16];
-        MemoryMarshal.Write(otherKeyBuf.Slice(0*16, 16), objIdB);
-        MemoryMarshal.Write(otherKeyBuf.Slice(1*16, 16), fldIdB);
-        MemoryMarshal.Write(otherKeyBuf.Slice(2*16, 16), objIdA);
-        MemoryMarshal.Write(otherKeyBuf.Slice(3*16, 16), fldIdA);
+        MemoryMarshal.Write(otherKeyBuf.Slice(0 * 16, 16), objIdB);
+        MemoryMarshal.Write(otherKeyBuf.Slice(1 * 16, 16), fldIdB);
+        MemoryMarshal.Write(otherKeyBuf.Slice(2 * 16, 16), objIdA);
+        MemoryMarshal.Write(otherKeyBuf.Slice(3 * 16, 16), fldIdA);
         var res2 = Store.Delete(otherKeyBuf);
 
         Debug.Assert(res1 == res2);
@@ -408,8 +415,7 @@ public sealed class DbSession : IDisposable
                     if (currentValue.Length == Unsafe.SizeOf<ObjValue>())
                         yield return (MemoryMarshal.Read<Guid>(currentKey), MemoryMarshal.Read<ObjValue>(currentValue).TypId);
                 }
-            }
-            while (Cursor.Next().ResultCode == ResultCode.Success);
+            } while (Cursor.Next().ResultCode == ResultCode.Success);
         }
     }
 
@@ -551,8 +557,6 @@ public struct AsoFldEnumerator : IEnumerator<AsoEnumeratorObj>
     object IEnumerator.Current => throw new NotImplementedException();
 }
 
-
-
 public enum ValueTyp : byte
 {
     Obj = 0,
@@ -572,11 +576,9 @@ public enum ChangeType : byte
 [StructLayout(LayoutKind.Explicit)]
 public struct ObjValue
 {
-    [FieldOffset(0)]
-    public ValueTyp ValueTyp;
+    [FieldOffset(0)] public ValueTyp ValueTyp;
 
-    [FieldOffset(1)]
-    public Guid TypId;
+    [FieldOffset(1)] public Guid TypId;
 }
 
 public enum ResultCode
@@ -585,7 +587,8 @@ public enum ResultCode
     NotFound
 }
 
-public enum ValueFlag : byte{
+public enum ValueFlag : byte
+{
     AddModify,
     Delete
 }

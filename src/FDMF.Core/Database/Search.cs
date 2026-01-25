@@ -685,18 +685,12 @@ public static class Searcher
         dest[0] = (byte)CustomIndexComparer.Comparison.Type;
         typId.AsSpan().CopyTo(dest.Slice(1));
 
-        var x = typId.AsSpan().ToArray();
 
         if (cursor.SetKey(dest).resultCode == MDBResultCode.Success)
         {
             do
             {
-                var (_, key, value) = cursor.GetCurrent();
-
-                var h = key.AsSpan().ToArray();
-
-                if(!key.AsSpan().SequenceEqual(dest))
-                    break;
+                var (_, _, value) = cursor.GetCurrent();
 
                 var guid = MemoryMarshal.Read<Guid>(value.AsSpan());
 
@@ -1132,7 +1126,7 @@ public static class Searcher
         dest[0] = (byte)CustomIndexComparer.Comparison.Type;
         typId.AsSpan().CopyTo(dest.Slice(1));
 
-        txn.Put(environment.NonStringSearchIndex, dest.ToArray(), objId.AsSpan().ToArray());
+        txn.Put(environment.NonStringSearchIndex, dest, objId.AsSpan());
     }
 
     private static void InsertNonStringIndex<T>(CustomIndexComparer.Comparison comparison, Guid fldId, Guid objId, ReadOnlySpan<byte> val, LightningTransaction transaction, LightningDatabase indexDb) where T : unmanaged

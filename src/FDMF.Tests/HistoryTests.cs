@@ -208,6 +208,10 @@ public class HistoryTests
 
         using var readSession = new DbSession(env, readOnly: true);
 
+
+        Assert.Null(readSession.GetObjFromGuid<TestingFolder>(bId));
+        Assert.Null(readSession.GetObjFromGuid<TestingFolder>(aId)!.Value.Parent);
+
         var commitsA = History.GetCommitsForObject(env, readSession.Store.ReadTransaction, aId).ToList();
         var commitsB = History.GetCommitsForObject(env, readSession.Store.ReadTransaction, bId).ToList();
 
