@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FDMF.Core.Utils;
@@ -325,7 +326,7 @@ public sealed class DbSession : IDisposable
     /// <summary>
     /// Gets a field value as a span. The returned span is valid as long as the session persists.
     /// </summary>
-    public byte[] GetFldValue(Guid objId, Guid fldId)
+    public ReadOnlySpan<byte> GetFldValue(Guid objId, Guid fldId)
     {
         Span<byte> keyBuf = stackalloc byte[2 * 16];
         MemoryMarshal.Write(keyBuf.Slice(0 * 16, 16), objId);
@@ -339,7 +340,7 @@ public sealed class DbSession : IDisposable
         if (value[0] != (byte)ValueTyp.Val)
             return [];
 
-        return value.Slice(1).ToArray();
+        return value.Slice(1);
     }
 
     /// <summary>

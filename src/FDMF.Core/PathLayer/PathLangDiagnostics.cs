@@ -21,7 +21,7 @@ public sealed record PathLangParseResult(
 
 public sealed class PathLangSemanticModel
 {
-    public Dictionary<AstExpr, Guid> PossibleTypesByExpr { get; } = new();
+    public Dictionary<AstNode, Guid> PossibleTypesByExpr { get; } = new();
 
     public Dictionary<AstPredicate, Guid?> InputTypIdByPredicate { get; } = new();
 

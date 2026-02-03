@@ -8,7 +8,7 @@ namespace FDMF.Cli.Utils;
 
 public static class EncodingUtils
 {
-    public static string DecodeScalar(FieldDataType type, byte[] payload)
+    public static string DecodeScalar(FieldDataType type, ReadOnlySpan<byte> payload)
     {
         if (payload.Length == 0)
             return string.Empty;

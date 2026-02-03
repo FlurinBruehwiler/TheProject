@@ -25,31 +25,31 @@ public partial struct TestingFolder : ITransactionObject, IEquatable<TestingFold
     [MemoryPackIgnore]
     public bool TestBoolField
     {
-        get => MemoryMarshal.Read<bool>(DbSession.GetFldValue(ObjId, Fields.TestBoolField).AsSpan());
+        get => MemoryMarshal.Read<bool>(DbSession.GetFldValue(ObjId, Fields.TestBoolField));
         set => DbSession.SetFldValue(ObjId, Fields.TestBoolField, value.AsSpan());
     }
     [MemoryPackIgnore]
     public DateTime TestDateField
     {
-        get => MemoryMarshal.Read<DateTime>(DbSession.GetFldValue(ObjId, Fields.TestDateField).AsSpan());
+        get => MemoryMarshal.Read<DateTime>(DbSession.GetFldValue(ObjId, Fields.TestDateField));
         set => DbSession.SetFldValue(ObjId, Fields.TestDateField, value.AsSpan());
     }
     [MemoryPackIgnore]
     public decimal TestDecimalField
     {
-        get => MemoryMarshal.Read<decimal>(DbSession.GetFldValue(ObjId, Fields.TestDecimalField).AsSpan());
+        get => MemoryMarshal.Read<decimal>(DbSession.GetFldValue(ObjId, Fields.TestDecimalField));
         set => DbSession.SetFldValue(ObjId, Fields.TestDecimalField, value.AsSpan());
     }
     [MemoryPackIgnore]
     public string Name
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name));
         set => DbSession.SetFldValue(ObjId, Fields.Name, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
     public long TestIntegerField
     {
-        get => MemoryMarshal.Read<long>(DbSession.GetFldValue(ObjId, Fields.TestIntegerField).AsSpan());
+        get => MemoryMarshal.Read<long>(DbSession.GetFldValue(ObjId, Fields.TestIntegerField));
         set => DbSession.SetFldValue(ObjId, Fields.TestIntegerField, value.AsSpan());
     }
     [MemoryPackIgnore]

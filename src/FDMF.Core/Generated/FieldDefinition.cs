@@ -25,31 +25,31 @@ public partial struct FieldDefinition : ITransactionObject, IEquatable<FieldDefi
     [MemoryPackIgnore]
     public string Name
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name));
         set => DbSession.SetFldValue(ObjId, Fields.Name, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
     public bool IsIndexed
     {
-        get => MemoryMarshal.Read<bool>(DbSession.GetFldValue(ObjId, Fields.IsIndexed).AsSpan());
+        get => MemoryMarshal.Read<bool>(DbSession.GetFldValue(ObjId, Fields.IsIndexed));
         set => DbSession.SetFldValue(ObjId, Fields.IsIndexed, value.AsSpan());
     }
     [MemoryPackIgnore]
     public string DataType
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.DataType).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.DataType));
         set => DbSession.SetFldValue(ObjId, Fields.DataType, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
     public string Key
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Key).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Key));
         set => DbSession.SetFldValue(ObjId, Fields.Key, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
     public string Id
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Id).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Id));
         set => DbSession.SetFldValue(ObjId, Fields.Id, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]

@@ -30,10 +30,10 @@ public sealed class PathLangBinderTests
 
         var path = Assert.IsType<AstPathExpr>(pred.Body);
         var step = Assert.Single(path.Steps);
-        // Assert.Contains(bind.SemanticModel.AssocByPathStep[step].Values, v => v.AssocFldId == TestingFolder.Fields.Parent);
+        Assert.Equal(TestingFolder.Fields.Parent, bind.SemanticModel.AssocByPathStep[step]);
 
         var cond = Assert.IsType<AstFieldCompareCondition>(step.Filter!.Condition);
-        // Assert.Contains(bind.SemanticModel.FieldByCompare[cond].Values, v => v.FldId == TestingFolder.Fields.Name);
+        Assert.Equal(TestingFolder.Fields.Name, bind.SemanticModel.FieldByCompare[cond]);
     }
 
     [Fact]
@@ -59,6 +59,7 @@ public sealed class PathLangBinderTests
         return model!.Value;
     }
 
+    //todo, I think a standard visitor pattern would be better....
     private static IEnumerable<AstPathStep> EnumeratePathSteps(AstExpr expr)
     {
         switch (expr)

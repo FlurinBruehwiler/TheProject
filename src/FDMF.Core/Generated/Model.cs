@@ -25,7 +25,7 @@ public partial struct Model : ITransactionObject, IEquatable<Model>
     [MemoryPackIgnore]
     public string Name
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name));
         set => DbSession.SetFldValue(ObjId, Fields.Name, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]

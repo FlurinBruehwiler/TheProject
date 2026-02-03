@@ -25,19 +25,19 @@ public partial struct EntityDefinition : ITransactionObject, IEquatable<EntityDe
     [MemoryPackIgnore]
     public string Key
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Key).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Key));
         set => DbSession.SetFldValue(ObjId, Fields.Key, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
     public string Id
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Id).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Id));
         set => DbSession.SetFldValue(ObjId, Fields.Id, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]
     public string Name
     {
-        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name).AsSpan());
+        get => Encoding.Unicode.GetString(DbSession.GetFldValue(ObjId, Fields.Name));
         set => DbSession.SetFldValue(ObjId, Fields.Name, Encoding.Unicode.GetBytes(value));
     }
     [MemoryPackIgnore]

@@ -22,8 +22,8 @@ public sealed class DbSessionTests
         session.DeleteObj(objId);
 
         Assert.Equal(Guid.Empty, session.GetTypId(objId));
-        Assert.Empty(session.GetFldValue(objId, TestModel.Generated.TestingFolder.Fields.Name));
-        Assert.Empty(session.GetFldValue(objId, TestModel.Generated.TestingFolder.Fields.TestIntegerField));
+        Assert.Equal(0, session.GetFldValue(objId, TestModel.Generated.TestingFolder.Fields.Name).Length);
+        Assert.Equal(0, session.GetFldValue(objId, TestModel.Generated.TestingFolder.Fields.TestIntegerField).Length);
     }
 
     [Fact]
