@@ -56,7 +56,7 @@ public partial struct FieldDefinition : ITransactionObject, IEquatable<FieldDefi
     public EntityDefinition OwningEntity
     {
         get => GeneratedCodeHelper.GetAssoc<EntityDefinition>(DbSession, ObjId, Fields.OwningEntity);
-        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OwningEntity, value.ObjId, EntityDefinition.Fields.FieldDefinitions);
+        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OwningEntity, value.ObjId, BaseModel.Generated.EntityDefinition.Fields.FieldDefinitions);
     }
 
     public static bool operator ==(FieldDefinition a, FieldDefinition b) => a.DbSession == b.DbSession && a.ObjId == b.ObjId;

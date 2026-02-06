@@ -16,12 +16,18 @@ using (var session = new DbSession(env2))
 }
 
 //Test Data
-using var env = Environment.CreateDatabase("temp", Path.Combine(root, "FDMF.Tests/testdata/TestModelDump.json"));
+GenerateModel(Path.Combine(root, "FDMF.Tests/testdata/TestModelDump.json"));
+GenerateModel(Path.Combine(root, "FDMF.Tests/testdata/BusinessModelDump.json"));
 
-using (var session = new DbSession(env))
+void GenerateModel(string path)
 {
-    var model = session.GetObjFromGuid<Model>(env.ModelGuid);
-    ModelGenerator.Generate(model!.Value, Path.Combine(root, "FDMF.Tests/Generated"));
+    using var env = Environment.CreateDatabase("temp", path);
+
+    using (var session = new DbSession(env))
+    {
+        var model = session.GetObjFromGuid<Model>(env.ModelGuid)!.Value;
+        ModelGenerator.Generate(model, Path.Combine(root, $"FDMF.Tests/Generated/{model.Name}"));
+    }
 }
 
 //Networking

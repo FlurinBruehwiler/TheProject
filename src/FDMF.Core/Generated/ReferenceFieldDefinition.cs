@@ -50,13 +50,13 @@ public partial struct ReferenceFieldDefinition : ITransactionObject, IEquatable<
     public EntityDefinition OwningEntity
     {
         get => GeneratedCodeHelper.GetAssoc<EntityDefinition>(DbSession, ObjId, Fields.OwningEntity);
-        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OwningEntity, value.ObjId, EntityDefinition.Fields.ReferenceFieldDefinitions);
+        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OwningEntity, value.ObjId, BaseModel.Generated.EntityDefinition.Fields.ReferenceFieldDefinitions);
     }
     [MemoryPackIgnore]
     public ReferenceFieldDefinition OtherReferenceFields
     {
         get => GeneratedCodeHelper.GetAssoc<ReferenceFieldDefinition>(DbSession, ObjId, Fields.OtherReferenceFields);
-        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OtherReferenceFields, value.ObjId, ReferenceFieldDefinition.Fields.OtherReferenceFields);
+        set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.OtherReferenceFields, value.ObjId, BaseModel.Generated.ReferenceFieldDefinition.Fields.OtherReferenceFields);
     }
 
     public static bool operator ==(ReferenceFieldDefinition a, ReferenceFieldDefinition b) => a.DbSession == b.DbSession && a.ObjId == b.ObjId;

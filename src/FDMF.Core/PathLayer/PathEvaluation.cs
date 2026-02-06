@@ -64,8 +64,6 @@ public static class PathEvaluation
                     if (astConditionBinary.Op == AstConditionOp.Or)
                         return CheckCondition(astConditionBinary.Left, obj, type) || CheckCondition(astConditionBinary.Right, obj, type);
                     break;
-                case AstErrorCondition astErrorCondition:
-                    break;
                 case AstFieldCompareCondition astFieldCompareCondition:
                     var fld = type.FieldDefinitions.First(x => astFieldCompareCondition.FieldName.Text.Span.SequenceEqual(x.Key));
                     var actualValue = session.GetFldValue(obj, fld.ObjId);
@@ -75,8 +73,6 @@ public static class PathEvaluation
                     {
                         case AstBoolLiteral astBoolLiteral:
                             r = MemoryMarshal.Read<bool>(actualValue) == astBoolLiteral.Value;
-                            break;
-                        case AstErrorLiteral astErrorLiteral:
                             break;
                         case AstNumberLiteral astNumberLiteral:
                             break;

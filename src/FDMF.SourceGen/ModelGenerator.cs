@@ -10,6 +10,10 @@ public static class ModelGenerator
 {
     public static void Generate(Model model, string targetDir)
     {
+        Directory.CreateDirectory(targetDir);
+
+        var @namespace = $"{Path.GetFileName(model.Name)}.Generated";
+
         foreach (var entity in model.GetAllEntityDefinitions())
         {
             var sourceBuilder = new SourceBuilder();
@@ -21,7 +25,7 @@ public static class ModelGenerator
             sourceBuilder.AppendLine("using FDMF.Core;");
             sourceBuilder.AppendLine("using FDMF.Core.Database;");
 
-            sourceBuilder.AppendLine($"namespace {Path.GetFileName(model.Name)}.Generated;");
+            sourceBuilder.AppendLine($"namespace {@namespace};");
             sourceBuilder.AppendLine();
 
             sourceBuilder.AppendLine("[MemoryPackable]");
@@ -87,7 +91,7 @@ public static class ModelGenerator
                 sourceBuilder.AppendLine($"public {dataType} {field.Key}");
                 sourceBuilder.AppendLine("{");
                 sourceBuilder.AddIndent();
-                sourceBuilder.AppendLine($"get => {string.Format(toFunction, $"DbSession.GetFldValue(ObjId, Fields.{field.Key}).AsSpan()")};");
+                sourceBuilder.AppendLine($"get => {string.Format(toFunction, $"DbSession.GetFldValue(ObjId, Fields.{field.Key})")};");
                 sourceBuilder.AppendLine($"set => DbSession.SetFldValue(ObjId, Fields.{field.Key}, {fromFunction});");
                 sourceBuilder.RemoveIndent();
                 sourceBuilder.AppendLine("}");
@@ -108,7 +112,7 @@ public static class ModelGenerator
                     var valueAccess = refField.RefType == nameof(RefType.SingleOptional) ? "value?.ObjId ?? Guid.Empty" : "value.ObjId";
 
                     sourceBuilder.AppendLine($"get => GeneratedCodeHelper.{getMethod}<{refField.OtherReferenceFields.OwningEntity.Key}>(DbSession, ObjId, Fields.{refField.Key});");
-                    sourceBuilder.AppendLine($"set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.{refField.Key}, {valueAccess}, {refField.OtherReferenceFields.OwningEntity.Key}.Fields.{refField.OtherReferenceFields.Key});");
+                    sourceBuilder.AppendLine($"set => GeneratedCodeHelper.SetAssoc(DbSession, ObjId, Fields.{refField.Key}, {valueAccess}, {@namespace}.{refField.OtherReferenceFields.OwningEntity.Key}.Fields.{refField.OtherReferenceFields.Key});");
 
                     sourceBuilder.RemoveIndent();
                     sourceBuilder.AppendLine("}");
